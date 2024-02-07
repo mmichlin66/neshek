@@ -1,5 +1,7 @@
 // Type definitions for mimcss
 
-export * from "./api/CoreTypes";
+export * from "./api/SchemaTypes";
+export * from "./api/RepoTypes";
 
-export * from "./api/CoreAPI";
+export * from "./api/SchemaAPI";
+export * from "./api/RepoAPI";
