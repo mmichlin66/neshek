@@ -1,4 +1,4 @@
-import { ModelClass, ModelClassName, Schema, SchemaModel } from "./SchemaTypes"
+import { ModelClass, ModelClassName, Schema, NeshekClassKey, SchemaModel } from "./SchemaTypes"
 
 
 
@@ -22,8 +22,6 @@ export interface IRepository<TSchema extends Schema>
     //  */
     get<TName extends ModelClassName<SchemaModel<TSchema>>>(
         cls: TName,
-        key: number
-        // key: SchemaClassKey<ModelClass<SchemaModel<T>, TName>>
+        key: NeshekClassKey<ModelClass<SchemaModel<TSchema>, TName>>
     ): ModelClass<SchemaModel<TSchema>, TName> | null;
-    // get<C extends SchemaClassName<T>>(cls: C, key: SchemaClassKey<SchemaClass<T,C>>): SchemaClass<T,C> | null;
 }

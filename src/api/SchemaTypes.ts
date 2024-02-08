@@ -26,39 +26,70 @@ export type StructTypePropName<T> = T extends StructType ? keyof T : never;
 
 
 // /**
-//  * Interface from which all interfaces representing schema classes should derive and pass the
-//  * type of their primary key as the type parameter. The key type can be one of the following:
-//  * - number - the primary key is a single field of the number type. This is a default type.
-//  * - string - the primary key is a single field ofthe string type.
-//  * - array consisting of numbers and/or string types - the primary key is a combination of two
-//  *   or more fields of the given types.
-//  * - undefined - the class doesn't have a primary key.
-//  * 
+//  * Represents types that can be used to define class primary key. 
 //  */
-// export interface ISchemaClass<T extends number | string | { [P: string]: number | string | boolean } | undefined = number>
-// {
-//     _pk_?: T;
-// }
+// export type ClassKeyType = { [P: string]: string | number | boolean | ClassKeyType }
 
-// /** Extracts key type of the given class type */
-// export type SchemaClassKey<T> = T extends ISchemaClass<infer U> ? U : never;
+// /** Extracts type for property names of the given primary key type */
+// export type ClassKeyTypePropName<T> = T extends ClassKeyType ? keyof T : never;
+
+
+
+/**
+ * Type from which all types representing schema classes should derive and pass the
+ * type of their primary key as the type parameter.
+ */
+export type NeshekClass<TKey extends { [P: string]: PropType } = {id?: number}> =
+    { [P in keyof TKey]?: TKey[P] } & { readonly _key_?: TKey }
+
+// export type SchemaClass<TKey extends ClassKeyType = {id?: number}> =
+//     { [P in keyof TKey]?: TKey[P] } & { readonly _key_?: TKey }
+
+// export type SchemaClass<TKey extends { [P: string]: number | string | boolean } = {id?: number}> =
+//     TKey extends {}
+//         ? { [P in keyof TKey]?: TKey[P] } & { _key_?: TKey }
+//         : { _key_?: unknown }
+
+/** Extracts key type of the given class type */
+export type NeshekClassKey<T> = T extends NeshekClass<infer U> ? U : never;
+// export type SchemaClassKey<T> = T extends SchemaClass<infer U> ? { [P in keyof U]?: U[P] } : never;
 
 // /**
 //  * Represents a Cross Link type, which has links to the given class types.
 //  */
-// export interface ICrossLink<T1,T2> extends ISchemaClass<[
-//             T1 extends ISchemaClass<infer K1> ? SchemaClassKey<K1> : never,
-//             T2 extends ISchemaClass<infer K2> ? SchemaClassKey<K2> : never,
-//         ]>
-// {
-// }
+// export type SchemaCrossLink<TTargets extends { [P: string]: StructType }> =
+//     { [P in keyof TTargets]?: TTargets[P] } & { _key_?: TTargets }
 
-// export interface ICrossLink<T1,T2> extends ISchemaClass<[
-//             T1 extends ISchemaClass<infer K1> ? SchemaClassKey<K1> : never,
-//             T2 extends ISchemaClass<infer K2> ? SchemaClassKey<K2> : never,
-//         ]>
-// {
-// }
+
+// /** Extracts key type of the given class type */
+// export type SchemaCrossLinkKey<T> = T extends SchemaCrossLink<infer U> ? U : never;
+
+
+
+type Product = NeshekClass<{code: string}> &
+{
+    name?: string;
+    items: Item[];
+}
+
+type Order = NeshekClass &
+{
+    time?: string;
+}
+
+type Item = NeshekClass<{order: Order, product: Product}> &
+{
+    price?: number;
+}
+
+let o: Order;
+let ok: NeshekClassKey<Order>;
+
+let p: Product;
+let pk: NeshekClassKey<Product>;
+
+let i: Item;
+let ik: NeshekClassKey<Item>
 
 
 
@@ -267,7 +298,7 @@ export type Schema<TModel extends Model = any> =
 /** Extracts the `Model` type from the given `Schema` type. */
 export type SchemaModel<T> = T extends Schema<infer TModel> ? TModel : never;
 
-export type SchemaClassKey<TSchema extends Schema, TName extends ModelClassName<SchemaModel<TSchema>>> = number;
+// export type SchemaClassKey<TSchema extends Schema, TName extends ModelClassName<SchemaModel<TSchema>>> = number;
 
 
 

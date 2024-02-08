@@ -38,11 +38,13 @@ export let MySchema: Schema<MyModel> = {
 
 
 
-let X: SchemaModel<Schema<MyModel>> = {} as SchemaModel<Schema<MyModel>>;
+let X: SchemaModel<Schema<MyModel>> = {} as SchemaModel<typeof MySchema>;
 
 
 let repo = createRepo(MySchema, {} as IDBAdapter);
-let order = repo.get("Product", 123);
+let product = repo.get("Product", {code: "123"});
+let order = repo.get("Order", {id: 123});
+let item = repo.get("Item", {order: {id: 123}, product: {code: "123"}});
 
 
 

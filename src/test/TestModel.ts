@@ -1,29 +1,25 @@
-import { ModelClass, ModelClassName, ModelClasses, Model } from "../api/SchemaTypes";
+import { ModelClass, ModelClassName, ModelClasses, Model, NeshekClass, NeshekClassKey } from "../api/SchemaTypes";
 
-export interface Order// extends ISchemaClass<number>
+export type Order = NeshekClass &
 {
-    id?: number;
     items?: Item[];
 }
 
-export interface Product// extends ISchemaClass<string>
+export type Product = NeshekClass<{code: string}> &
 {
-    code?: string;
     name?: string;
     msrp?: number;
     notes?: Note[];
 }
 
-export interface Note// extends ISchemaClass<undefined>
+export type Note =
 {
     time?: number;
     text?: string;
 }
 
-export interface Item// extends ICrossLink<Order, Product>
+export type Item = NeshekClass<{order: Order, product: Product}> &
 {
-    order?: Order;
-    product?: Product;
     price?: number;
 }
 
@@ -46,11 +42,11 @@ export type MyModel = Model<MyClasses, MyStructs>;
 let x1: ModelClasses<MyModel>;
 let x2: ModelClassName<MyModel> = "Item";
 let x3: ModelClass<MyModel, "Order">;
-// let x3pk: SchemaClassKey<Order>;
-// let x4: SchemaClass<MyModel, "Product">;
-// let x4pk: SchemaClassKey<Product>;
-// let x5: SchemaClass<MyModel, "Item">;
-// let x5pk: SchemaClassKey<Item>;
+let x3pk: NeshekClassKey<Order>;
+let x4: ModelClass<MyModel, "Product">;
+let x4pk: NeshekClassKey<Product>;
+let x5: ModelClass<MyModel, "Item">;
+let x5pk: NeshekClassKey<Item>;
 
 
 
