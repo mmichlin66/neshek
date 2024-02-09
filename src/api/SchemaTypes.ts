@@ -29,7 +29,7 @@ export type StructTypePropName<T> = T extends StructType ? keyof T : never;
  * Type from which all types representing schema classes should derive and pass the
  * type of their primary key as the type parameter.
  */
-export type NeshekClass<TKey extends { [P: string]: PropType } = {id?: number}> =
+export type NeshekClass<TKey extends StructType> =
     { [P in keyof TKey]?: TKey[P] } & { readonly _key_?: TKey }
 
 
@@ -61,8 +61,17 @@ export type ModelStructName<TModel extends Model> = keyof ModelStructs<TModel>;
 /** Extracts type representing the structure with the given name from the `Model` type */
 export type ModelStruct<TModel extends Model, TName extends ModelStructName<TModel>> = ModelStructs<TModel>[TName];
 
-/** Extracts primary key type of the given Model class type */
-export type PKofModelClass<T> = T extends NeshekClass<infer U> ? U : never;
+/**
+ * Extracts primary key type of the given Model class type. For cross-link classes, it is a
+ * combination of primary keys of the linked classes.
+ */
+export type PKofModelClass<T> = T extends NeshekClass<infer U>
+    ? { [P in keyof U]-?: U[P] extends NeshekClass<infer V> ? PKofModelClass<V> : U[P] }
+    : never;
+
+// export type PKofModelClass<T> = T extends NeshekClass<infer U>
+//     ? { [P in keyof U]-?: U[P] extends NeshekClass<infer V> ? { [P in keyof V]-?: V[P] } : U[P] }
+//     : never;
 
 
 
@@ -204,20 +213,14 @@ export type StructDef<TModel extends Model, TStruct extends {}> =
 export type ClassDef<TModel extends Model, TClass extends {}> =
 {
     /**
-     * Defenitions of class properties
-     */
-    props: StructDef<TModel,TClass>;
-
-    /**
-     * If the class is declared abstract, no instances of it can be created in the repository.
-     * It can only be used as a base for other classes.
-     */
-    abstract?: boolean;
-
-    /**
      * Defines one or more base classes or structures.
      */
     base?: string | string[];
+
+    /**
+     * Defenitions of class properties
+     */
+    props: StructDef<TModel,TClass>;
 
     /**
      * Defines what fields constitute a primary key for the class. The key can be a single field
@@ -225,7 +228,13 @@ export type ClassDef<TModel extends Model, TClass extends {}> =
      * primary key at all. If the `key` property is undefined and the class defines property named
      * `id`, then it is used as a primary key.
      */
-    key?: false | keyof TClass | (keyof TClass)[];
+    key?: (keyof PKofModelClass<TClass>)[];
+
+    /**
+     * If the class is declared abstract, no instances of it can be created in the repository.
+     * It can only be used as a base for other classes.
+     */
+    abstract?: boolean;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { ModelClass, ModelClassName, ModelClasses, Model, NeshekClass, PKofModelClass } from "neshek";
 
-export type Order = NeshekClass &
+export type Order = NeshekClass<{id: number}> &
 {
     items?: Item[];
 }
@@ -23,14 +23,21 @@ export type Item = NeshekClass<{order: Order, product: Product}> &
     price?: number;
 }
 
-export interface MyClasses
+export type ExtraItemInfo = NeshekClass<{item: Item}> &
 {
-    Order: Order;
-    Item: Item;
-    Product: Product;
+    price?: number;
+    comments: string[];
 }
 
-export interface MyStructs
+export type MyClasses =
+{
+    Order: Order;
+    Product: Product;
+    Item: Item;
+    ExtraItemInfo: ExtraItemInfo;
+}
+
+export type MyStructs =
 {
     Note: Note;
 }
@@ -46,7 +53,9 @@ let x3pk: PKofModelClass<Order>;
 let x4: ModelClass<MyModel, "Product">;
 let x4pk: PKofModelClass<Product>;
 let x5: ModelClass<MyModel, "Item">;
-let x5pk: PKofModelClass<Item>;
+let x5pk: PKofModelClass<Item> = {order: {id: 123}, product: {code: "123"}};
+let x6: ModelClass<MyModel, "ExtraItemInfo">;
+let x6pk: PKofModelClass<ExtraItemInfo> = {item: {order: {id: 123}, product: {code: "123"}}};
 
 
 

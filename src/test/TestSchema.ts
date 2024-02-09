@@ -7,8 +7,9 @@ export let mySchema: Schema<MyModel> = {
         "Order" : {
             props: {
                 id: {dt: "i8"},
-                items: {dt: "ml", origin: ["Item", "order"]}
+                items: {dt: "ml", origin: ["Item", "order"]},
             },
+            key: ["id"],
         },
         "Product": {
             props: {
@@ -17,6 +18,7 @@ export let mySchema: Schema<MyModel> = {
                 msrp: {dt: "f", min: 0},
                 notes: {dt: "arr", elm: {dt: "struct", props: {time: {dt: "i4"}, text: {dt: "s", maxlen: 200}}}}
             },
+            key: ["code"],
         },
         "Item": {
             props: {
@@ -24,6 +26,14 @@ export let mySchema: Schema<MyModel> = {
                 product: {dt: "l", target: "Product"},
                 price: {dt: "f", min: 0},
             },
+            key: ["order", "product"],
+        },
+        "ExtraItemInfo": {
+            props: {
+                item: {dt: "l", target: "Item"},
+                comments: {dt: "arr", elm: {dt: "s"}},
+            },
+            key: ["item"],
         },
     },
 
@@ -48,13 +58,16 @@ let x4: SchemaClass<MySchema, "Product">;
 let x4pk: PKofSchemaClass<MySchema, "Product">;
 let x5: SchemaClass<MySchema, "Item">;
 let x5pk: PKofSchemaClass<MySchema, "Item">;
+let x6: SchemaClass<MySchema, "ExtraItemInfo">;
+let x6pk: PKofSchemaClass<MySchema, "ExtraItemInfo">;
 
 
 
 let repo = createRepo(mySchema, {} as IDBAdapter);
-let product = repo.get("Product", {code: "123"});
+let product = await repo.get("Product", {code: "123", });
 let order = repo.get("Order", {id: 123});
 let item = repo.get("Item", {order: {id: 123}, product: {code: "123"}});
+let extraItemInfo = repo.get("ExtraItemInfo", {item: {order: {id: 123}, product: {code: "123"}}});
 
 // @ts-expect-error (Note is not a class)
 let note = repo.get("Note", {id: 123});

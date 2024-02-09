@@ -13,6 +13,14 @@ export interface IDBAdapter
 
 
 
+/**
+ * Represents a query for a given class, which lists properties that should be retrieved.
+ */
+export type Query<TClass> =
+{}
+
+
+
 /** Represents an error that can be produced by repository functions. */
 export type RepoError = {
     /** Numerical error code */
@@ -60,6 +68,6 @@ export interface IRepository<TSchema extends Schema>
      */
     get<TName extends SchemaClassName<TSchema>>(
         cls: TName,
-        key: PKofSchemaClass<TSchema, TName>
-    ): RepoGetResponse<SchemaClass<TSchema, TName>>;
+        key: PKofSchemaClass<TSchema, TName>,
+    ): Promise<RepoGetResponse<SchemaClass<TSchema, TName>>>;
 }
