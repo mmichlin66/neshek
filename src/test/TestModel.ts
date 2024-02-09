@@ -1,4 +1,4 @@
-import { ModelClass, ModelClassName, ModelClasses, Model, NeshekClass, NeshekClassKey } from "../api/SchemaTypes";
+import { ModelClass, ModelClassName, ModelClasses, Model, NeshekClass, PKofModelClass } from "../api/SchemaTypes";
 
 export type Order = NeshekClass &
 {
@@ -42,11 +42,11 @@ export type MyModel = Model<MyClasses, MyStructs>;
 let x1: ModelClasses<MyModel>;
 let x2: ModelClassName<MyModel> = "Item";
 let x3: ModelClass<MyModel, "Order">;
-let x3pk: NeshekClassKey<Order>;
+let x3pk: PKofModelClass<Order>;
 let x4: ModelClass<MyModel, "Product">;
-let x4pk: NeshekClassKey<Product>;
+let x4pk: PKofModelClass<Product>;
 let x5: ModelClass<MyModel, "Item">;
-let x5pk: NeshekClassKey<Item>;
+let x5pk: PKofModelClass<Item>;
 
 
 

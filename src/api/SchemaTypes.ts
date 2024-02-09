@@ -25,71 +25,12 @@ export type StructTypePropName<T> = T extends StructType ? keyof T : never;
 
 
 
-// /**
-//  * Represents types that can be used to define class primary key. 
-//  */
-// export type ClassKeyType = { [P: string]: string | number | boolean | ClassKeyType }
-
-// /** Extracts type for property names of the given primary key type */
-// export type ClassKeyTypePropName<T> = T extends ClassKeyType ? keyof T : never;
-
-
-
 /**
  * Type from which all types representing schema classes should derive and pass the
  * type of their primary key as the type parameter.
  */
 export type NeshekClass<TKey extends { [P: string]: PropType } = {id?: number}> =
     { [P in keyof TKey]?: TKey[P] } & { readonly _key_?: TKey }
-
-// export type SchemaClass<TKey extends ClassKeyType = {id?: number}> =
-//     { [P in keyof TKey]?: TKey[P] } & { readonly _key_?: TKey }
-
-// export type SchemaClass<TKey extends { [P: string]: number | string | boolean } = {id?: number}> =
-//     TKey extends {}
-//         ? { [P in keyof TKey]?: TKey[P] } & { _key_?: TKey }
-//         : { _key_?: unknown }
-
-/** Extracts key type of the given class type */
-export type NeshekClassKey<T> = T extends NeshekClass<infer U> ? U : never;
-// export type SchemaClassKey<T> = T extends SchemaClass<infer U> ? { [P in keyof U]?: U[P] } : never;
-
-// /**
-//  * Represents a Cross Link type, which has links to the given class types.
-//  */
-// export type SchemaCrossLink<TTargets extends { [P: string]: StructType }> =
-//     { [P in keyof TTargets]?: TTargets[P] } & { _key_?: TTargets }
-
-
-// /** Extracts key type of the given class type */
-// export type SchemaCrossLinkKey<T> = T extends SchemaCrossLink<infer U> ? U : never;
-
-
-
-type Product = NeshekClass<{code: string}> &
-{
-    name?: string;
-    items: Item[];
-}
-
-type Order = NeshekClass &
-{
-    time?: string;
-}
-
-type Item = NeshekClass<{order: Order, product: Product}> &
-{
-    price?: number;
-}
-
-let o: Order;
-let ok: NeshekClassKey<Order>;
-
-let p: Product;
-let pk: NeshekClassKey<Product>;
-
-let i: Item;
-let ik: NeshekClassKey<Item>
 
 
 
@@ -119,6 +60,9 @@ export type ModelStructName<TModel extends Model> = keyof ModelStructs<TModel>;
 
 /** Extracts type representing the structure with the given name from the `Model` type */
 export type ModelStruct<TModel extends Model, TName extends ModelStructName<TModel>> = ModelStructs<TModel>[TName];
+
+/** Extracts primary key type of the given Model class type */
+export type PKofModelClass<T> = T extends NeshekClass<infer U> ? U : never;
 
 
 
@@ -196,50 +140,50 @@ export type BoolIntPropDef = CommonPropDef &
 /**
  * Contains attributes defining behavior of a structure field
  */
-export type StructPropDef<S extends Model, T extends {}> = CommonPropDef &
+export type StructPropDef<TModel extends Model, T extends {}> = CommonPropDef &
 {
     dt: "struct";
-    props: StructDef<S,T>;
+    props: StructDef<TModel,T>;
 }
 
 /**
  * Contains attributes defining behavior of a structure field
  */
-export type ArrayPropDef<S extends Model, T> = CommonPropDef &
+export type ArrayPropDef<TModel extends Model, T> = CommonPropDef &
 {
     dt: "arr";
-    elm: PropDef<S,T>;
+    elm: PropDef<TModel,T>;
 }
 
 /**
  * Contains attributes defining behavior of a single link field
  */
-export type LinkPropDef<S extends Model> = CommonPropDef &
+export type LinkPropDef<TModel extends Model> = CommonPropDef &
 {
     dt: "l";
-    target: keyof S["classes"] | keyof S["classes"][],
+    target: keyof TModel["classes"] | keyof TModel["classes"][],
 }
 
 /**
  * Contains attributes defining behavior of a multi link field pointing to a class or crosslink.
  */
-export type MultiLinkPropDef<S extends Model, T> = CommonPropDef &
+export type MultiLinkPropDef<TModel extends Model, T> = CommonPropDef &
 {
     dt: "ml";
-    origin: [keyof S["classes"], keyof T];
+    origin: [keyof TModel["classes"], keyof T];
 }
 
 /**
  * Contains attributes defining behavior of a field of a given TypeScript type.
  */
-export type PropDef<S extends Model, T extends any> =
+export type PropDef<TModel extends Model, T> =
 (
     T extends string ? StringPropDef :
     T extends number ? NumberPropDef :
     T extends BigInt ? BigIntPropDef :
     T extends boolean ? BoolIntPropDef :
-    T extends Array<infer U> ? MultiLinkPropDef<S,U> | ArrayPropDef<S,U> :
-    T extends {} ? LinkPropDef<S> | StructPropDef<S,T> :
+    T extends Array<infer U> ? MultiLinkPropDef<TModel,U> | ArrayPropDef<TModel,U> :
+    T extends {} ? LinkPropDef<TModel> | StructPropDef<TModel,T> :
     never
 );
 
@@ -296,9 +240,32 @@ export type Schema<TModel extends Model = any> =
 }
 
 /** Extracts the `Model` type from the given `Schema` type. */
-export type SchemaModel<T> = T extends Schema<infer TModel> ? TModel : never;
+export type SchemaModel<TSchema> = TSchema extends Schema<infer TModel> ? TModel : never;
 
-// export type SchemaClassKey<TSchema extends Schema, TName extends ModelClassName<SchemaModel<TSchema>>> = number;
+
+
+/** Extracts `classes` object's type from the `Schema` type */
+export type SchemaClasses<TSchema extends Schema> = ModelClasses<SchemaModel<TSchema>>;
+
+/** Extracts type representing names of classes from the `Schema` type */
+export type SchemaClassName<TSchema extends Schema> = ModelClassName<SchemaModel<TSchema>>;
+
+/** Extracts type representing the classes with the given name from the `Schema` type */
+export type SchemaClass<TSchema extends Schema, TName extends SchemaClassName<TSchema>> = ModelClass<SchemaModel<TSchema>, TName>;
+
+/** Extracts `structs` object's type from the `Schema` type */
+export type SchemaStructs<TSchema extends Schema> = ModelStructs<SchemaModel<TSchema>>;
+
+/** Extracts type representing names of structures from the `Schema` type */
+export type SchemaStructName<TSchema extends Schema> = ModelStructName<SchemaModel<TSchema>>;
+
+/** Extracts type representing the structure with the given name from the `Schema` type */
+export type SchemaStruct<TSchema extends Schema, TName extends SchemaStructName<TSchema>> = ModelStruct<SchemaModel<TSchema>, TName>;
+
+
+/** Extracts type of primary key of the given Schema class type */
+export type PKofSchemaClass<TSchema extends Schema, TName extends SchemaClassName<TSchema>> =
+    PKofModelClass<ModelClass<TSchema, TName>>;
 
 
 

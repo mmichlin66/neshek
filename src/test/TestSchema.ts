@@ -1,4 +1,4 @@
-import { IDBAdapter, Schema, SchemaModel, createRepo } from "neshek"
+import { IDBAdapter, Schema, createRepo } from "neshek"
 import { MyModel } from "./TestModel"
 
 
@@ -38,13 +38,13 @@ export let MySchema: Schema<MyModel> = {
 
 
 
-let X: SchemaModel<Schema<MyModel>> = {} as SchemaModel<typeof MySchema>;
-
-
 let repo = createRepo(MySchema, {} as IDBAdapter);
 let product = repo.get("Product", {code: "123"});
 let order = repo.get("Order", {id: 123});
 let item = repo.get("Item", {order: {id: 123}, product: {code: "123"}});
+
+// @ts-expect-error (Note is not a class)
+let note = repo.get("Note", {id: 123});
 
 
 
