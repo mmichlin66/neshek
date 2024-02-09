@@ -1,9 +1,8 @@
-import { IDBAdapter, Schema, createRepo } from "neshek"
+import { IDBAdapter, PKofSchemaClass, Schema, SchemaClass, SchemaClassName, SchemaClasses, SchemaModel, createRepo } from "neshek"
 import { MyModel } from "./TestModel"
 
 
-
-export let MySchema: Schema<MyModel> = {
+export let mySchema: Schema<MyModel> = {
     classes: {
         "Order" : {
             props: {
@@ -36,9 +35,23 @@ export let MySchema: Schema<MyModel> = {
     }
 }
 
+export type MySchema = typeof mySchema;
 
 
-let repo = createRepo(MySchema, {} as IDBAdapter);
+
+let x0: SchemaModel<MySchema>;
+let x1: SchemaClasses<MySchema>;
+let x2: SchemaClassName<MySchema> = "Item";
+let x3: SchemaClass<MySchema, "Order">;
+let x3pk: PKofSchemaClass<MySchema, "Order">;
+let x4: SchemaClass<MySchema, "Product">;
+let x4pk: PKofSchemaClass<MySchema, "Product">;
+let x5: SchemaClass<MySchema, "Item">;
+let x5pk: PKofSchemaClass<MySchema, "Item">;
+
+
+
+let repo = createRepo(mySchema, {} as IDBAdapter);
 let product = repo.get("Product", {code: "123"});
 let order = repo.get("Order", {id: 123});
 let item = repo.get("Item", {order: {id: 123}, product: {code: "123"}});

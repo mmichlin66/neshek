@@ -1,4 +1,4 @@
-import { ModelClass, ModelClassName, ModelClasses, Model, NeshekClass, PKofModelClass } from "../api/SchemaTypes";
+import { ModelClass, ModelClassName, ModelClasses, Model, NeshekClass, PKofModelClass } from "neshek";
 
 export type Order = NeshekClass &
 {

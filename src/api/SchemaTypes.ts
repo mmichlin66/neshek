@@ -265,7 +265,7 @@ export type SchemaStruct<TSchema extends Schema, TName extends SchemaStructName<
 
 /** Extracts type of primary key of the given Schema class type */
 export type PKofSchemaClass<TSchema extends Schema, TName extends SchemaClassName<TSchema>> =
-    PKofModelClass<ModelClass<TSchema, TName>>;
+    PKofModelClass<SchemaClass<TSchema, TName>>;
 
 
 
