@@ -1,4 +1,4 @@
-import { StructType, ScalarOrUndefined, ArrayOrUndefined, StructOrUndefined, NeshekClass } from "./SchemaTypes"
+import { StructType, ScalarOrUndefined, ArrayOrUndefined, StructOrUndefined } from "./SchemaTypes"
 
 
 
@@ -15,10 +15,9 @@ import { StructType, ScalarOrUndefined, ArrayOrUndefined, StructOrUndefined, Nes
  *   parameters determining how the array elements or linked objects are returned.
  */
 export type PropSet<T> = T extends StructType
-    ? { [P in Exclude<keyof T, `*${string}`>]?: T[P] extends ScalarOrUndefined ? boolean :
+    ? { [P in keyof T]?: T[P] extends ScalarOrUndefined ? boolean :
             T[P] extends ArrayOrUndefined<infer TElm> ? Query<TElm> :
-            T[P] extends StructOrUndefined ? PropSet<T[P]> :
-            never }
+            T[P] extends StructOrUndefined ? PropSet<T[P]> : never }
     : never;
 
 /**
@@ -28,29 +27,8 @@ export type PropSet<T> = T extends StructType
 export type Query<T> =
 {
     props?: PropSet<T>;
-}
-
-
-
-type Product = NeshekClass<{code: string}> &
-{
-    code?: string;
-    notes?: Note[];
-}
-
-type Note =
-{
-    time?: number;
-    text?: string;
-}
-
-
-
-let x: PropSet<Product> = {
-    code: false,
-
-    // @ts-expect-error (not property of Product)
-    a: false,
+    limit?: number;
+    cursor?: string;
 }
 
 

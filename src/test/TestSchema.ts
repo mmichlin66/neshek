@@ -1,4 +1,4 @@
-import { IDBAdapter, PKofSchemaClass, Schema, SchemaClass, SchemaClassName, SchemaClasses, SchemaModel, createRepo } from "neshek"
+import { PKofSchemaClass, Schema, SchemaClass, SchemaClassName, SchemaClasses, SchemaModel } from "neshek"
 import { MyModel } from "./TestModel"
 
 
