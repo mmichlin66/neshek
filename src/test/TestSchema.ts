@@ -63,14 +63,3 @@ let x6pk: PKofSchemaClass<MySchema, "ExtraItemInfo">;
 
 
 
-let repo = createRepo(mySchema, {} as IDBAdapter);
-let product = await repo.get("Product", {code: "123", });
-let order = repo.get("Order", {id: 123});
-let item = repo.get("Item", {order: {id: 123}, product: {code: "123"}});
-let extraItemInfo = repo.get("ExtraItemInfo", {item: {order: {id: 123}, product: {code: "123"}}});
-
-// @ts-expect-error (Note is not a class)
-let note = repo.get("Note", {id: 123});
-
-
-

@@ -1,4 +1,5 @@
-import { Schema, SchemaClass, SchemaClassName, PKofSchemaClass, StructType } from "./SchemaTypes"
+import { PropSet } from "./QueryTypes";
+import { Schema, SchemaClass, SchemaClassName, PKofSchemaClass } from "./SchemaTypes"
 
 
 
@@ -13,14 +14,6 @@ export interface IDBAdapter
 
 
 
-/**
- * Represents a query for a given class, which lists properties that should be retrieved.
- */
-export type Query<TClass> =
-{}
-
-
-
 /** Represents an error that can be produced by repository functions. */
 export type RepoError = {
     /** Numerical error code */
@@ -31,6 +24,9 @@ export type RepoError = {
 
     /** Error stack trace */
     trace?: string;
+
+    /** Downstream error that caused this error */
+    causedBy?: RepoError;
 }
 
 /**
@@ -69,5 +65,6 @@ export interface IRepository<TSchema extends Schema>
     get<TName extends SchemaClassName<TSchema>>(
         cls: TName,
         key: PKofSchemaClass<TSchema, TName>,
+        props?: PropSet<SchemaClass<TSchema, TName>>
     ): Promise<RepoGetResponse<SchemaClass<TSchema, TName>>>;
 }

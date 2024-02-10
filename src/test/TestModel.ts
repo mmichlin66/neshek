@@ -48,9 +48,9 @@ export type MyModel = Model<MyClasses, MyStructs>;
 
 let x1: ModelClasses<MyModel>;
 let x2: ModelClassName<MyModel> = "Item";
-let x3: ModelClass<MyModel, "Order">;
+let x3: ModelClass<MyModel, "Order"> = {id: 123};
 let x3pk: PKofModelClass<Order>;
-let x4: ModelClass<MyModel, "Product">;
+let x4: ModelClass<MyModel, "Product"> = {code: "123", msrp: 35.99, name: "desk", notes: [{}]};
 let x4pk: PKofModelClass<Product>;
 let x5: ModelClass<MyModel, "Item">;
 let x5pk: PKofModelClass<Item> = {order: {id: 123}, product: {code: "123"}};
