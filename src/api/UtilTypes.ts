@@ -27,12 +27,12 @@ export type UnionKeys<T> = T extends T ? keyof T : never;
  * let o4: XOR<[User, Group]> = {name: "c", members:[]}
  * ```
  */
-export type XOR<T extends {}[]> = {
-  [K in keyof T]: T[K] & Partial<Record<Exclude<UnionKeys<T[number]>, keyof T[K]>, never>>;
+export type XOR<T extends any[]> = {
+  [i in keyof T]: T[i] & Partial<Record<Exclude<UnionKeys<T[number]>, keyof T[i]>, never>>;
 }[number];
 
-type User = {username: string, name: string}
-type Group = {name: string, members: string[]}
+type User = {username: string, name: string, first?: string}
+type Group = {name: string, members?: string[]}
 
 let o1: User | Group = {username: "a", name: "b", members:[]}
 
@@ -41,7 +41,7 @@ let o2: XOR<[User, Group]> = {username: "a", name: "b", members:[]}
 
 // no errors
 let o3: XOR<[User, Group]> = {username: "a", name: "b"}
-let o4: XOR<[User, Group]> = {name: "c", members:[]}
+let o4: XOR<[User, Group]> = {name: "c", members: []}
 
 
 

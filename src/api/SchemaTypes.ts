@@ -13,7 +13,7 @@ export type DataType<T extends PropType> =
     T extends boolean ? "b" :
     T extends Array<any> ? "arr" :
     T extends MultiLink ? "ml" :
-    T extends {} ? "struct" | "l" :
+    T extends StructType ? "struct" | "l" :
     never
 
 /**
@@ -78,7 +78,7 @@ export type BoolPropDef = CommonPropDef &
 /**
  * Contains attributes defining behavior of a structure field
  */
-export type StructPropDef<TModel extends Model, T extends {}> = CommonPropDef &
+export type StructPropDef<TModel extends Model, T extends StructType> = CommonPropDef &
 {
     dt: "struct";
     props: StructDef<TModel,T>;
@@ -137,7 +137,7 @@ export type PropDef<TModel extends Model, T> =
  * serve as a "base" for a class. In the latter case, the class will have all the proprties
  * that the structure defines.
  */
-export type StructDef<TModel extends Model, TStruct extends {}> =
+export type StructDef<TModel extends Model, TStruct extends StructType> =
 {
     [P in keyof TStruct & string]-?: PropDef<TModel, TStruct[P]>
 }
@@ -145,7 +145,7 @@ export type StructDef<TModel extends Model, TStruct extends {}> =
 /**
  * Represents definition of a class.
  */
-export type ClassDef<TModel extends Model, TClass extends {}> =
+export type ClassDef<TModel extends Model, TClass extends StructType> =
 {
     /**
      * Defines one or more base classes or structures.
@@ -177,10 +177,10 @@ export type ClassDef<TModel extends Model, TClass extends {}> =
  */
 export type Schema<TModel extends Model = {classes: {}, structs: {}}> =
 {
-    classes: { [P in ModelClassName<TModel>]:
-        ClassDef<TModel, ModelClass<TModel,P> extends {} ? ModelClass<TModel,P> : never>}
-    structs: { [P in ModelStructName<TModel>]:
-        StructDef<TModel, ModelStruct<TModel,P> extends {} ? ModelStruct<TModel,P> : never>}
+    classes: { [TName in ModelClassName<TModel>]:
+        ClassDef<TModel, ModelClass<TModel,TName> extends StructType ? ModelClass<TModel,TName> : never>}
+    structs: { [TName in ModelStructName<TModel>]:
+        StructDef<TModel, ModelStruct<TModel,TName> extends StructType ? ModelStruct<TModel,TName> : never>}
 }
 
 /** Extracts the `Model` type from the given `Schema` type. */

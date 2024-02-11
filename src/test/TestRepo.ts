@@ -5,40 +5,45 @@ import { mySchema } from "./TestSchema";
 let repo = createRepo(mySchema, {} as IDBAdapter);
 
 let product = await repo.get("Product", {code: "123"}, {
-    msrp: false,
+    msrp: undefined,
     notes: {
         props: {
-            text: false,
-            time: false,
+            text: undefined,
+            time: undefined,
 
             // @ts-expect-error (a is not in Item)
-            a: false,
+            a: undefined,
         }
     },
 
     // // @ts-expect-error (not property of Product)
-    // a: false,
+    // a: undefined,
 });
 
 let order = repo.get("Order", {id: 123}, {
-    id: false,
+    id: undefined,
+    items: {
+        props: {
+            price: 2
+        }
+    },
 
     // @ts-expect-error (not property of Order)
-    a: false,
+    a: undefined,
 });
 
 let item = repo.get("Item", {order: {id: 123}, product: {code: "123"}}, {
-    price: false,
+    price: undefined,
     order: {
-        id: false,
+        id: undefined,
     },
     product: {
-        code: false,
-        msrp: false,
+        code: undefined,
+        msrp: undefined,
     },
 
     // @ts-expect-error (not property of Item)
-    a: false,
+    a: undefined,
 });
 
 let extraItemInfo = repo.get("ExtraItemInfo", {item: {order: {id: 123}, product: {code: "123"}}});

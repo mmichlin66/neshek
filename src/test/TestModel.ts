@@ -46,24 +46,27 @@ export type MyModel = Model<MyClasses, MyStructs>;
 
 
 
-let x1: ModelClasses<MyModel>;
-let x2: ModelClassName<MyModel> = "Item";
-let order: ModelClass<MyModel, "Order"> = {id: 123};
-let orderName: NameOfClass<Order> = "Order";
-let orderKey: KeyOfModelClass<Order> = {id: 123};
-let product: ModelClass<MyModel, "Product"> = {code: "123", msrp: 35.99, name: "desk", notes: [{}]};
-let productName: NameOfClass<Product> = "Product";
-let productKey: KeyOfModelClass<Product> = {code: "123"};
-let item: ModelClass<MyModel, "Item"> = {order: {id: 123}, product: {code: "123"}, price: 30.99};
-let itemName: NameOfClass<Item> = "Item";
-let itemKey: KeyOfModelClass<Item> = {order: {id: 123}, product: {code: "123"}};
-let extraItemInfo: ModelClass<MyModel, "ExtraItemInfo"> =
-    {comments: ["first", "second"], item: {order: {id: 123}, product: {code: "123"}}};
-let extraItemInfoName: NameOfClass<ExtraItemInfo> = "ExtraItemInfo";
-let extraItemInfoKey: KeyOfModelClass<ExtraItemInfo> = {item: {order: {id: 123}, product: {code: "123"}}};
+function test(): void
+{
+    let x1: ModelClasses<MyModel>;
+    let x2: ModelClassName<MyModel> = "Item";
+    let order: ModelClass<MyModel, "Order"> = {id: 123};
+    let orderName: NameOfClass<Order> = "Order";
+    let orderKey: KeyOfModelClass<Order> = {id: 123};
+    let product: ModelClass<MyModel, "Product"> = {code: "123", msrp: 35.99, name: "desk", notes: [{}]};
+    let productName: NameOfClass<Product> = "Product";
+    let productKey: KeyOfModelClass<Product> = {code: "123"};
+    let item: ModelClass<MyModel, "Item"> = {order: {id: 123}, product: {code: "123"}, price: 30.99};
+    let itemName: NameOfClass<Item> = "Item";
+    let itemKey: KeyOfModelClass<Item> = {order: {id: 123}, product: {code: "123"}};
+    let extraItemInfo: ModelClass<MyModel, "ExtraItemInfo"> =
+        {comments: ["first", "second"], item: {order: {id: 123}, product: {code: "123"}}};
+    let extraItemInfoName: NameOfClass<ExtraItemInfo> = "ExtraItemInfo";
+    let extraItemInfoKey: KeyOfModelClass<ExtraItemInfo> = {item: {order: {id: 123}, product: {code: "123"}}};
 
-// @ts-expect-error (should be either code or id)
-let x7pk: XOR<[KeyOfModelClass<Order>, KeyOfModelClass<Product>]> = {code: "123", id: 123};
+    // @ts-expect-error (should be either code or id)
+    let x7pk: XOR<[KeyOfModelClass<Order>, KeyOfModelClass<Product>]> = {code: "123", id: 123};
+}
 
 
 

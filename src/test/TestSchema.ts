@@ -48,18 +48,20 @@ export let mySchema: Schema<MyModel> = {
 export type MySchema = typeof mySchema;
 
 
-
-let x0: SchemaModel<MySchema>;
-let x1: SchemaClasses<MySchema>;
-let x2: SchemaClassName<MySchema> = "Item";
-let x3: SchemaClass<MySchema, "Order">;
-let x3pk: KeyOfSchemaClass<MySchema, "Order">;
-let x4: SchemaClass<MySchema, "Product">;
-let x4pk: KeyOfSchemaClass<MySchema, "Product">;
-let x5: SchemaClass<MySchema, "Item">;
-let x5pk: KeyOfSchemaClass<MySchema, "Item">;
-let x6: SchemaClass<MySchema, "ExtraItemInfo">;
-let x6pk: KeyOfSchemaClass<MySchema, "ExtraItemInfo">;
+function test(): void
+{
+    let x0: SchemaModel<MySchema>;
+    let x1: SchemaClasses<MySchema>;
+    let x2: SchemaClassName<MySchema> = "Item";
+    let x3: SchemaClass<MySchema, "Order">;
+    let x3pk: KeyOfSchemaClass<MySchema, "Order">;
+    let x4: SchemaClass<MySchema, "Product">;
+    let x4pk: KeyOfSchemaClass<MySchema, "Product">;
+    let x5: SchemaClass<MySchema, "Item">;
+    let x5pk: KeyOfSchemaClass<MySchema, "Item">;
+    let x6: SchemaClass<MySchema, "ExtraItemInfo">;
+    let x6pk: KeyOfSchemaClass<MySchema, "ExtraItemInfo">;
+}
 
 
 

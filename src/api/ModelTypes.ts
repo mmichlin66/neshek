@@ -1,7 +1,7 @@
 /**
  * Represents simple scalar types allowed for object properties.
  */
-export type ScalarType = string | number | boolean | BigInt;
+export type ScalarType = string | number | boolean | bigint;
 
 /**
  * Represents possible types of object properties, which can be one of the following:
@@ -26,10 +26,10 @@ export type StructTypePropName<T> = T extends StructType ? keyof T : never;
 /**
  * Represents a multi link to a given class.
  */
-export type MultiLink<T extends StructType = {}> =
+export type MultiLink<TClass extends StructType = any> =
 {
     /** Array of objects of the given class */
-    data?: T[];
+    elms?: TClass[];
 
     /**
      * Cursor that can be used to retrieve additional objects. If cursor is undefined, there
@@ -84,7 +84,7 @@ export type NeshekClassInfo<TName extends string, TKey extends StructType,
  * constraints become properties of the class, so they should not be repeated in the type body.
  * If the class doesn't have primary key, specify `[]`, which is also a default of this parameter.
  */
-export type NeshekClass<TName extends string, TKey extends StructType = {}, TUnique extends StructType[] = []> =
+export type NeshekClass<TName extends string, TKey extends StructType = any, TUnique extends StructType[] = any> =
     { [P in keyof TKey]?: TKey[P] } &
     { [symNeshekClass]?: NeshekClassInfo<TName, TKey, TUnique> }
 
@@ -93,8 +93,8 @@ export type NeshekClass<TName extends string, TKey extends StructType = {}, TUni
 /**
  * Interface that combines interface definitions of classes, structures and type aliases.
  */
-export type Model<TClasses extends { [P: string]: StructType } = {},
-    TStructs extends { [P: string]: StructType } = {}> =
+export type Model<TClasses extends { [P: string]: StructType } = any,
+    TStructs extends { [P: string]: StructType } = any> =
 {
     classes: TClasses;
     structs: TStructs;

@@ -1,5 +1,5 @@
 import { Model, KeyOfModelClass, ModelClassName, ModelClass } from "./ModelTypes"
-import { PropSet } from "./QueryTypes";
+import { GetPropSet, Query } from "./QueryTypes";
 
 
 
@@ -50,6 +50,12 @@ export type RepoResponse<TData> = {
 /** Represent response from the repository `get` operation. */
 export type RepoGetResponse<TClass> = RepoResponse<TClass | null>
 
+/** Represent response from the repository `query` operation. */
+export type RepoQueryResponse<TClass> = RepoResponse<{
+    elms: TClass[];
+    cursor?: string;
+}>
+
 
 
 /**
@@ -63,9 +69,19 @@ export interface IRepository<TModel extends Model>
      * @param key
      * @param props
      */
-    get<TName extends ModelClassName<TModel>, TClass = ModelClass<TModel,TName>>(
+    get<TName extends ModelClassName<TModel>, TClass extends ModelClass<TModel,TName>>(
         className: TName,
         key: KeyOfModelClass<TClass>,
-        props?: PropSet<TClass>
-    ): Promise<RepoGetResponse<TName>>;
+        props?: GetPropSet<TClass>
+    ): Promise<RepoGetResponse<TClass>>;
+
+    /**
+     * Retrieves multiple objects by the given criteria.
+     * @param className
+     * @param query
+     */
+    query<TName extends ModelClassName<TModel>, TClass extends ModelClass<TModel,TName>>(
+        className: TName,
+        query?: Query<TClass>
+    ): Promise<RepoQueryResponse<TClass>>;
 }
