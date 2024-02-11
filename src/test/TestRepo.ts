@@ -47,7 +47,7 @@ let extraItemInfo = repo.get("ExtraItemInfo", {item: {order: {id: 123}, product:
 let note = repo.get("Note", {id: 123});
 
 // @ts-expect-error (id is not primary key)
-let product1 = repo.get("Product", {id: "123", });
+let product1 = repo.get("Product", {id: "123"});
 
 // @ts-expect-error (id is not primary key)
 let item1 = repo.get("Item", {order: {id: 123}, product: {id: "123"}});

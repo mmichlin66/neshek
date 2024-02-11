@@ -1,4 +1,4 @@
-import { PKofSchemaClass, Schema, SchemaClass, SchemaClassName, SchemaClasses, SchemaModel } from "neshek"
+import { KeyOfSchemaClass, Schema, SchemaClass, SchemaClassName, SchemaClasses, SchemaModel } from "neshek"
 import { MyModel } from "./TestModel"
 
 
@@ -7,7 +7,7 @@ export let mySchema: Schema<MyModel> = {
         "Order" : {
             props: {
                 id: {dt: "i8"},
-                items: {dt: "ml", origin: ["Item", "order"]},
+                items: {dt: "ml", origin: "Item", originKey: ["order"]},
             },
             key: ["id"],
         },
@@ -53,13 +53,13 @@ let x0: SchemaModel<MySchema>;
 let x1: SchemaClasses<MySchema>;
 let x2: SchemaClassName<MySchema> = "Item";
 let x3: SchemaClass<MySchema, "Order">;
-let x3pk: PKofSchemaClass<MySchema, "Order">;
+let x3pk: KeyOfSchemaClass<MySchema, "Order">;
 let x4: SchemaClass<MySchema, "Product">;
-let x4pk: PKofSchemaClass<MySchema, "Product">;
+let x4pk: KeyOfSchemaClass<MySchema, "Product">;
 let x5: SchemaClass<MySchema, "Item">;
-let x5pk: PKofSchemaClass<MySchema, "Item">;
+let x5pk: KeyOfSchemaClass<MySchema, "Item">;
 let x6: SchemaClass<MySchema, "ExtraItemInfo">;
-let x6pk: PKofSchemaClass<MySchema, "ExtraItemInfo">;
+let x6pk: KeyOfSchemaClass<MySchema, "ExtraItemInfo">;
 
 
 

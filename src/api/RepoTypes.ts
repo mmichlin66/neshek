@@ -1,5 +1,5 @@
+import { Model, KeyOfModelClass, ModelClassName, ModelClass } from "./ModelTypes"
 import { PropSet } from "./QueryTypes";
-import { Schema, SchemaClass, SchemaClassName, PKofSchemaClass } from "./SchemaTypes"
 
 
 
@@ -31,7 +31,7 @@ export type RepoError = {
 
 /**
  * Represents a generic response type returned by repository functions.
- * @typeparam TData type of returned data.
+ * @typeParam TData type of returned data.
  */
 export type RepoResponse<TData> = {
     /**
@@ -55,16 +55,17 @@ export type RepoGetResponse<TClass> = RepoResponse<TClass | null>
 /**
  * Represents operations that can be performed by a repository.
  */
-export interface IRepository<TSchema extends Schema>
+export interface IRepository<TModel extends Model>
 {
     /**
      * Retrieves a single object by the given key
-     * @param cls
+     * @param className
      * @param key
+     * @param props
      */
-    get<TName extends SchemaClassName<TSchema>>(
-        cls: TName,
-        key: PKofSchemaClass<TSchema, TName>,
-        props?: PropSet<SchemaClass<TSchema, TName>>
-    ): Promise<RepoGetResponse<SchemaClass<TSchema, TName>>>;
+    get<TName extends ModelClassName<TModel>, TClass = ModelClass<TModel,TName>>(
+        className: TName,
+        key: KeyOfModelClass<TClass>,
+        props?: PropSet<TClass>
+    ): Promise<RepoGetResponse<TName>>;
 }

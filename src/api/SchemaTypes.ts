@@ -1,130 +1,19 @@
-/**
- * Represents simple scalar types allowed for object properties.
- */
-export type ScalarType = string | number | boolean | BigInt;
-
-/**
- * Represents possible types of object properties, which can be one of the following:
- * - Simple scalar types: string, number, BigInt and Boolean
- * - Links: single and multi links
- * - Array of any possible types
- * - Structure containing fields of any possible types
- *
- * This is a recursive type because, for example, it can be an array of structures, where some
- * fields can also be arrays or structures.
- */
-export type PropType = ScalarType | Array<PropType> | MultiLink | StructType | NeshekClass;
-
-/**
- * Represents a structure (object) with restricted property types.
- */
-export type StructType = { [P: string]: PropType }
-
-/** Extracts type for property names of the given stucture type */
-export type StructTypePropName<T> = T extends StructType ? keyof T : never;
-
-/**
- * Represents a multi link to a given class.
- */
-export type MultiLink<T extends StructType = {}> =
-{
-    /** Array of objects of the given class */
-    data?: T[];
-
-    /**
-     * Cursor that can be used to retrieve additional objects. If cursor is undefined, there
-     * is no more data.
-     */
-    cursor?: string;
-}
-
-
-
-/** Represents a Scalar type or undefined. */
-export type ScalarOrUndefined = ScalarType | undefined;
-
-/** Represents a structure type or undefined. */
-export type StructOrUndefined = StructType | undefined;
-
-/** Represents an array type or undefined. */
-export type ArrayOrUndefined<T> = Array<T> | undefined;
-
-/** Represents an array type or undefined. */
-export type PropOrUndefined = PropType | undefined;
-
-
-
-/**
- * Symbol used only to make primary key type part of class type. We use symbol because it is not
- * enumerated by `keyof`.
- */
-export const symKey = Symbol("simKey");
-
-/**
- * Type from which all types representing schema classes should derive and pass the
- * type of their primary key as the type parameter.
- */
-export type NeshekClass<TKey extends StructType = {}> =
-    { [P in keyof TKey]?: TKey[P] } & { [symKey]?: TKey }
-
-
-
-/**
- * Interface that combines interface definitions of classes, structures and type aliases.
- */
-export type Model<TClasses extends { [P: string]: StructType } = {},
-    TStructs extends { [P: string]: StructType } = {}> =
-{
-    classes: TClasses;
-    structs: TStructs;
-}
-
-/** Extracts `classes` object's type from the `Model` type */
-export type ModelClasses<TModel extends Model> =
-    TModel extends Model<infer TClasses, {}> ? TClasses : never;
-
-/** Extracts type representing names of classes from the `Model` type */
-export type ModelClassName<TModel extends Model> = string & keyof ModelClasses<TModel>;
-
-/** Extracts type representing the classes with the given name from the `Model` type */
-export type ModelClass<TModel extends Model, TName extends ModelClassName<TModel>> =
-    ModelClasses<TModel>[TName];
-
-/** Extracts `structs` object's type from the `Model` type */
-export type ModelStructs<TModel extends Model> =
-    TModel extends Model<{}, infer TStructs> ? TStructs : never;
-
-/** Extracts type representing names of structures from the `Model` type */
-export type ModelStructName<TModel extends Model> = keyof ModelStructs<TModel>;
-
-/** Extracts type representing the structure with the given name from the `Model` type */
-export type ModelStruct<TModel extends Model, TName extends ModelStructName<TModel>> =
-    ModelStructs<TModel>[TName];
-
-/**
- * Extracts primary key type of the given Model class type. For cross-link classes, it is a
- * combination of primary keys of the linked classes.
- */
-export type KeyOfModelClass<TClass> = TClass extends NeshekClass<infer TKey>
-    ? { [P in keyof TKey]-?: TKey[P] extends NeshekClass<infer TNestedClass>
-        ? KeyOfModelClass<TNestedClass>
-        : TKey[P] }
-    : never;
-
-
+import {
+    PropType, MultiLink, Model, ModelClassName, KeyOfModelClass, ModelClass, ModelStructName,
+    ModelStruct, ModelClasses, ModelStructs, StructType, NameOfClass
+} from "./ModelTypes";
 
 /**
  * Represents underlying data type corresponding to the given property type
  */
-export type DataType<T> =
+export type DataType<T extends PropType> =
     T extends string ? "s" :
     T extends number ? "i1" | "i2" | "i4" | "u1" | "u2" | "u4" | "f" | "d":
     T extends BigInt ? "i8" | "u8":
     T extends boolean ? "b" :
     T extends Array<any> ? "arr" :
     T extends MultiLink ? "ml" :
-    T extends NeshekClass ? "l" :
-    T extends {} ? "struct" :
+    T extends {} ? "struct" | "l" :
     never
 
 /**
@@ -181,7 +70,7 @@ export type BigIntPropDef = CommonPropDef &
 /**
  * Contains attributes defining behavior of a Boolean field
  */
-export type BoolIntPropDef = CommonPropDef &
+export type BoolPropDef = CommonPropDef &
 {
     dt: "b";
 }
@@ -198,28 +87,33 @@ export type StructPropDef<TModel extends Model, T extends {}> = CommonPropDef &
 /**
  * Contains attributes defining behavior of a structure field
  */
-export type ArrayPropDef<TModel extends Model, T> = CommonPropDef &
+export type ArrayPropDef<TModel extends Model, TElm> = CommonPropDef &
 {
     dt: "arr";
-    elm: PropDef<TModel,T>;
+    elm: PropDef<TModel,TElm>;
 }
 
 /**
- * Contains attributes defining behavior of a single link field
+ * Contains attributes defining behavior of a single link field.
+ * @typeParam TClass class that is a target of the link.
  */
-export type LinkPropDef<TModel extends Model> = CommonPropDef &
+export type LinkPropDef<TClass> = CommonPropDef &
 {
     dt: "l";
-    target: ModelClassName<TModel> | ModelClassName<TModel>[],
+    target: NameOfClass<TClass>,
 }
 
 /**
  * Contains attributes defining behavior of a multi link field pointing to a class or crosslink.
+ * @typeParam TClass class that is a target of the multi link; that is, the origin of the
+ * corresponding single link.
+ *
  */
-export type MultiLinkPropDef<TModel extends Model, T> = CommonPropDef &
+export type MultiLinkPropDef<TClass> = CommonPropDef &
 {
     dt: "ml";
-    origin: [ModelClassName<TModel>, string & keyof T];
+    origin: NameOfClass<TClass>;
+    originKey: (keyof KeyOfModelClass<TClass>)[];
 }
 
 /**
@@ -230,10 +124,10 @@ export type PropDef<TModel extends Model, T> =
     T extends string ? StringPropDef :
     T extends number ? NumberPropDef :
     T extends BigInt ? BigIntPropDef :
-    T extends boolean ? BoolIntPropDef :
-    T extends Array<infer U> ? ArrayPropDef<TModel,U> :
-    T extends MultiLink<infer V> ? MultiLinkPropDef<TModel,V> :
-    T extends {} ? LinkPropDef<TModel> | StructPropDef<TModel,T> :
+    T extends boolean ? BoolPropDef :
+    T extends Array<infer TElm> ? ArrayPropDef<TModel,TElm> :
+    T extends MultiLink<infer TClass> ? MultiLinkPropDef<TClass> :
+    T extends StructType ? LinkPropDef<T> | StructPropDef<TModel,T> :
     never
 );
 
@@ -316,7 +210,7 @@ export type SchemaStruct<TSchema extends Schema, TName extends SchemaStructName<
 
 
 /** Extracts type of primary key of the given Schema class type */
-export type PKofSchemaClass<TSchema extends Schema, TName extends SchemaClassName<TSchema>> =
+export type KeyOfSchemaClass<TSchema extends Schema, TName extends SchemaClassName<TSchema>> =
     KeyOfModelClass<SchemaClass<TSchema, TName>>;
 
 

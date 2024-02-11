@@ -1,4 +1,5 @@
-import { StructType, ScalarOrUndefined, ArrayOrUndefined, StructOrUndefined } from "./SchemaTypes"
+import { StructType, ScalarOrUndefined, StructOrUndefined } from "./ModelTypes"
+import { ArrayOrUndefined } from "./UtilTypes";
 
 
 
@@ -15,9 +16,10 @@ import { StructType, ScalarOrUndefined, ArrayOrUndefined, StructOrUndefined } fr
  *   parameters determining how the array elements or linked objects are returned.
  */
 export type PropSet<T> = T extends StructType
-    ? { [P in keyof T]?: T[P] extends ScalarOrUndefined ? boolean :
-            T[P] extends ArrayOrUndefined<infer TElm> ? Query<TElm> :
-            T[P] extends StructOrUndefined ? PropSet<T[P]> : never }
+    ? { [P in keyof T & string]?:
+        T[P] extends ScalarOrUndefined ? {} :
+        T[P] extends ArrayOrUndefined<infer TElm> ? Query<TElm> :
+        T[P] extends StructOrUndefined ? PropSet<T[P]> : never }
     : never;
 
 /**
