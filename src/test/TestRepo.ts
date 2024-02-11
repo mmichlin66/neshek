@@ -16,8 +16,8 @@ let product = await repo.get("Product", {code: "123"}, {
         }
     },
 
-    // // @ts-expect-error (not property of Product)
-    // a: undefined,
+    // ??? @ts-expect-error (not property of Product) - not working for Product
+    a: undefined,
 });
 
 let order = repo.get("Order", {id: 123}, {

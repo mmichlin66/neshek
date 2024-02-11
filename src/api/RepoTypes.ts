@@ -1,4 +1,4 @@
-import { Model, KeyOfModelClass, ModelClassName, ModelClass } from "./ModelTypes"
+import { Model, KeyOfClass, ModelClassName, ModelClass } from "./ModelTypes"
 import { GetPropSet, Query } from "./QueryTypes";
 
 
@@ -71,7 +71,7 @@ export interface IRepository<TModel extends Model>
      */
     get<TName extends ModelClassName<TModel>, TClass extends ModelClass<TModel,TName>>(
         className: TName,
-        key: KeyOfModelClass<TClass>,
+        key: KeyOfClass<TClass>,
         props?: GetPropSet<TClass>
     ): Promise<RepoGetResponse<TClass>>;
 

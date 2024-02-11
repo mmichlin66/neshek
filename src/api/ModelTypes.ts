@@ -1,3 +1,5 @@
+import { UnionToIntersection } from "./UtilTypes";
+
 /**
  * Represents simple scalar types allowed for object properties.
  */
@@ -89,20 +91,93 @@ export type NeshekClass<TName extends string, TKey extends StructType = any, TUn
     { [symNeshekClass]?: NeshekClassInfo<TName, TKey, TUnique> }
 
 
+/**
+ * Transforms array of Neshek class types into object type where keys are class names and
+ * their types are class types. This type is used for Model type definition.
+ *
+ * **Example:**
+ * ```typescript
+ * type MyClasses = NeshekClasses<[Order, Product]>;
+ *
+ * // the above line is equivalent to
+ * type MyClasses = {
+ *     Order: Order;
+ *     Product: Product;
+ * }
+ * ```
+ *
+ * @typeParam T array of class types
+ */
+export type NeshekClasses<T extends NeshekClass<any>[]> =
+    UnionToIntersection<
+        { [i in keyof T]: T[i] extends NeshekClass<infer S> ? {[P in S]: T[i]} : never }[number]
+    >
+
+
 
 /**
- * Interface that combines interface definitions of classes, structures and type aliases.
+ * Symbol used only to make some information to be part of struct type. This iformation includes
+ * struct name. We use symbol to be able to not enumerate it using `keyof T & string`.
+ * @internal
  */
-export type Model<TClasses extends { [P: string]: StructType } = any,
-    TStructs extends { [P: string]: StructType } = any> =
+export const symNeshekStruct = Symbol();
+
+/**
+ * Represents type information "assigned" to the symNeshekStruct symbol. It includes struct name.
+ * @internal
+ */
+export type NeshekStructInfo<TName extends string> =
 {
-    classes: TClasses;
-    structs: TStructs;
+    name: TName;
 }
 
+/**
+ * Type from which all types representing Neshek model structures should derive.
+ * @typeParam TName name of the struct by which the struct can be referred to. Usually this name
+ * is the same as the TypeScript class name.
+ */
+export type NeshekStruct<TName extends string> =
+    { [symNeshekStruct]?: NeshekStructInfo<TName> }
+
+
+/**
+ * Transforms array of Neshek struct types into object type where keys are struct names and
+ * their types are struct types. This type is used for Model type definition.
+ *
+ * **Example:**
+ * ```typescript
+ * type MyStructs = NeshekStructs<[Note, Comment]>;
+ *
+ * // the above line is equivalent to
+ * type MyStructs = {
+ *     Note: Note;
+ *     Comment: Comment;
+ * }
+ * ```
+ *
+ * @typeParam T array of struct types
+ */
+export type NeshekStructs<T extends NeshekStruct<any>[]> =
+    UnionToIntersection<
+        { [i in keyof T]: T[i] extends NeshekStruct<infer S> ? {[P in S]: T[i]} : never }[number]
+    >
+
+
+
+/**
+ * Type that combines types definitions of classes, structures and type aliases.
+ */
+export type Model<TClasses extends NeshekClass<any>[] = [],
+    TStructs extends StructType[] = []> =
+{
+    classes: NeshekClasses<TClasses>;
+    structs: NeshekStructs<TStructs>;
+}
+
+
+
 /** Extracts `classes` object's type from the `Model` type */
-export type ModelClasses<TModel extends Model> =
-    TModel extends Model<infer TClasses, {}> ? TClasses : never;
+export type ModelClasses<TModel extends Model> = TModel["classes"];
 
 /** Extracts type representing names of classes from the `Model` type */
 export type ModelClassName<TModel extends Model> = string & keyof ModelClasses<TModel>;
@@ -111,17 +186,6 @@ export type ModelClassName<TModel extends Model> = string & keyof ModelClasses<T
 export type ModelClass<TModel extends Model, TName extends ModelClassName<TModel>> =
     ModelClasses<TModel>[TName];
 
-/** Extracts `structs` object's type from the `Model` type */
-export type ModelStructs<TModel extends Model> =
-    TModel extends Model<{}, infer TStructs> ? TStructs : never;
-
-/** Extracts type representing names of structures from the `Model` type */
-export type ModelStructName<TModel extends Model> = keyof ModelStructs<TModel>;
-
-/** Extracts type representing the structure with the given name from the `Model` type */
-export type ModelStruct<TModel extends Model, TName extends ModelStructName<TModel>> =
-    ModelStructs<TModel>[TName];
-
 /** Extracts class name type from the given class type */
 export type NameOfClass<TClass> = TClass extends NeshekClass<infer TName> ? TName : never;
 
@@ -129,11 +193,26 @@ export type NameOfClass<TClass> = TClass extends NeshekClass<infer TName> ? TNam
  * Extracts primary key type of the given Model class type. For cross-link classes, it is a
  * combination of primary keys of the linked classes.
  */
-export type KeyOfModelClass<TClass> = TClass extends NeshekClass<infer TName, infer TKey>
+export type KeyOfClass<TClass> = TClass extends NeshekClass<infer TName, infer TKey>
     ? { [P in keyof TKey]-?: TKey[P] extends NeshekClass<infer TName, infer TNestedClass>
-        ? KeyOfModelClass<TNestedClass>
+        ? KeyOfClass<TNestedClass>
         : TKey[P] }
     : never;
+
+
+
+/** Extracts `structs` object's type from the `Model` type */
+export type ModelStructs<TModel extends Model> = TModel["structs"];
+
+/** Extracts type representing names of struct types from the `Model` type */
+export type ModelStructName<TModel extends Model> = keyof ModelStructs<TModel>;
+
+/** Extracts type representing the structure with the given name from the `Model` type */
+export type ModelStruct<TModel extends Model, TName extends ModelStructName<TModel>> =
+    ModelStructs<TModel>[TName];
+
+/** Extracts class name type from the given class type */
+export type NameOfStruct<TStruct> = TStruct extends NeshekStruct<infer TName> ? TName : never;
 
 
 

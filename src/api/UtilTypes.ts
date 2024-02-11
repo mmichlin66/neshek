@@ -89,23 +89,3 @@ let x2: ArrayToUnion<(string | number | Date)[]>;
 
 
 
-const symN = Symbol();
-type C<N extends string = string> = {[symN]?: N}
-
-type AC2AS<T extends C[]> = { [i in keyof T]: T[i] extends C<infer S> ? S : never }
-
-type AC2AO<T extends C[]> = { [i in keyof T]: T[i] extends C<infer S> ? {[P in S]: T[i]} : never }
-
-type AC2O<T extends C[]> = UnionToIntersection<AC2AO<T>[number]>
-
-type X1 = C<"X1"> & {id: number}
-type X2 = C<"X2"> & {code: string}
-
-type AS = AC2AS<[X1,X2]>
-type ASN = AC2AS<[X1,X2]>[number]
-type AO = AC2AO<[X1,X2]>
-type AON = AC2AO<[X1,X2]>[number]
-type O = AC2O<[X1,X2]>
-let x: keyof O
-
-let o: AC2O<[X1,X2]> = {X1: {id: 123}, X2: {code: "123"}}

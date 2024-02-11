@@ -1,5 +1,5 @@
 import {
-    PropType, MultiLink, Model, ModelClassName, KeyOfModelClass, ModelClass, ModelStructName,
+    PropType, MultiLink, Model, ModelClassName, KeyOfClass, ModelClass, ModelStructName,
     ModelStruct, ModelClasses, ModelStructs, StructType, NameOfClass
 } from "./ModelTypes";
 
@@ -113,7 +113,7 @@ export type MultiLinkPropDef<TClass> = CommonPropDef &
 {
     dt: "ml";
     origin: NameOfClass<TClass>;
-    originKey: (keyof KeyOfModelClass<TClass>)[];
+    originKey: (keyof KeyOfClass<TClass>)[];
 }
 
 /**
@@ -163,7 +163,7 @@ export type ClassDef<TModel extends Model, TClass extends StructType> =
      * primary key at all. If the `key` property is undefined and the class defines property named
      * `id`, then it is used as a primary key.
      */
-    key?: (keyof KeyOfModelClass<TClass>)[];
+    key?: (keyof KeyOfClass<TClass>)[];
 
     /**
      * If the class is declared abstract, no instances of it can be created in the repository.
@@ -211,7 +211,7 @@ export type SchemaStruct<TSchema extends Schema, TName extends SchemaStructName<
 
 /** Extracts type of primary key of the given Schema class type */
 export type KeyOfSchemaClass<TSchema extends Schema, TName extends SchemaClassName<TSchema>> =
-    KeyOfModelClass<SchemaClass<TSchema, TName>>;
+    KeyOfClass<SchemaClass<TSchema, TName>>;
 
 
 
