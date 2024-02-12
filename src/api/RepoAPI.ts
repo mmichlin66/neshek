@@ -1,6 +1,7 @@
 import { Model } from "./ModelTypes";
-import { IDBAdapter, IRepository } from "./RepoTypes";
 import { SchemaDef } from "./SchemaTypes"
+import { IDBAdapter } from "./DBTypes";
+import { IRepository } from "./RepoTypes";
 
 
 

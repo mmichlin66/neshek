@@ -3,7 +3,7 @@ import { UnionToIntersection } from "./UtilTypes";
 /**
  * Represents simple scalar types allowed for object properties.
  */
-export type ScalarType = string | number | boolean | bigint;
+export type ScalarType = string | number | boolean | bigint | Date;
 
 /**
  * Represents possible types of object properties, which can be one of the following:

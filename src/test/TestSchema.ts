@@ -15,7 +15,7 @@ export let mySchema: SchemaDef<MyModel> = {
             props: {
                 code: {dt: "s"},
                 name: {dt: "s", minlen: 3, maxlen: 100},
-                msrp: {dt: "f", min: 0},
+                msrp: {dt: "r4", min: 0},
                 notes: {dt: "arr", elm: {dt: "struct", props: {time: {dt: "i4"}, text: {dt: "s", maxlen: 200}}}}
             },
             key: ["code"],
@@ -24,7 +24,7 @@ export let mySchema: SchemaDef<MyModel> = {
             props: {
                 order: {dt: "l", target: "Order"},
                 product: {dt: "l", target: "Product"},
-                price: {dt: "f", min: 0},
+                price: {dt: "r4", min: 0},
             },
             key: ["order", "product"],
         },

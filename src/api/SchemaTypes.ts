@@ -1,15 +1,22 @@
 import {
     PropType, MultiLink, Model, ModelClassName, KeyOfClass, ModelClass, ModelStructName,
-    ModelStruct, ModelClasses, ModelStructs, StructType, NameOfClass
+    ModelStruct, StructType, NameOfClass
 } from "./ModelTypes";
 
 /**
  * Represents underlying data type corresponding to the given property type
  */
-export type DataType<T extends PropType> =
-    T extends string ? "s" :
-    T extends number ? "i1" | "i2" | "i4" | "u1" | "u2" | "u4" | "f" | "d":
-    T extends BigInt ? "i8" | "u8":
+export type DataType =
+    "s" | "b" | "i1" | "i2" | "i4" | "i8" | "u1" | "u2" | "u4" | "u8" | "r4" | "r8" |
+    "d" | "t" | "struct" | "arr" | "l" | "ml";
+
+/**
+ * Represents underlying data type corresponding to the given property type
+ */
+export type DataTypeOfPropType<T extends PropType> =
+    T extends string ? "s" | "d" :
+    T extends number ? "i1" | "i2" | "i4" | "i8" | "u1" | "u2" | "u4" | "u8" | "r4" | "r8" :
+    T extends BigInt ? "i8" | "u8" :
     T extends boolean ? "b" :
     T extends Array<any> ? "arr" :
     T extends MultiLink ? "ml" :
@@ -21,6 +28,8 @@ export type DataType<T extends PropType> =
  */
 export type CommonPropDef =
 {
+    dt: DataType;
+
     /**
      * Determines whether the field value must be unique across all objects of its class.
      * Default value: false.
@@ -51,7 +60,7 @@ export type StringPropDef = CommonPropDef &
  */
 export type NumberPropDef = CommonPropDef &
 {
-    dt: "i1" | "i2" | "i4" | "i8" | "u1" | "u2" | "u4" | "u8"| "f" | "d";
+    dt: "i1" | "i2" | "i4" | "i8" | "u1" | "u2" | "u4" | "u8"| "r4" | "r8";
     min?: number;
     max?: number;
     choices?: number[];
@@ -78,19 +87,19 @@ export type BoolPropDef = CommonPropDef &
 /**
  * Contains attributes defining behavior of a structure field
  */
-export type StructPropDef<TModel extends Model, T extends StructType> = CommonPropDef &
+export type StructPropDef<T extends StructType> = CommonPropDef &
 {
     dt: "struct";
-    props: StructDef<TModel,T>;
+    props: StructDef<T>;
 }
 
 /**
  * Contains attributes defining behavior of a structure field
  */
-export type ArrayPropDef<TModel extends Model, TElm> = CommonPropDef &
+export type ArrayPropDef<TElm> = CommonPropDef &
 {
     dt: "arr";
-    elm: PropDef<TModel,TElm>;
+    elm: PropDef<TElm>;
 }
 
 /**
@@ -119,15 +128,15 @@ export type MultiLinkPropDef<TClass> = CommonPropDef &
 /**
  * Contains attributes defining behavior of a field of a given TypeScript type.
  */
-export type PropDef<TModel extends Model, T> =
+export type PropDef<T> =
 (
     T extends string ? StringPropDef :
     T extends number ? NumberPropDef :
     T extends BigInt ? BigIntPropDef :
     T extends boolean ? BoolPropDef :
-    T extends Array<infer TElm> ? ArrayPropDef<TModel,TElm> :
+    T extends Array<infer TElm> ? ArrayPropDef<TElm> :
     T extends MultiLink<infer TClass> ? MultiLinkPropDef<TClass> :
-    T extends StructType ? LinkPropDef<T> | StructPropDef<TModel,T> :
+    T extends StructType ? LinkPropDef<T> | StructPropDef<T> :
     never
 );
 
@@ -137,15 +146,15 @@ export type PropDef<TModel extends Model, T> =
  * serve as a "base" for a class. In the latter case, the class will have all the proprties
  * that the structure defines.
  */
-export type StructDef<TModel extends Model, TStruct extends StructType> =
+export type StructDef<TStruct extends StructType> =
 {
-    [P in keyof TStruct & string]-?: PropDef<TModel, TStruct[P]>
+    [P in keyof TStruct & string]-?: PropDef<TStruct[P]>
 }
 
 /**
  * Represents definition of a class.
  */
-export type ClassDef<TModel extends Model, TClass extends StructType> =
+export type ClassDef<TClass extends StructType> =
 {
     /**
      * Defines one or more base classes or structures.
@@ -155,7 +164,7 @@ export type ClassDef<TModel extends Model, TClass extends StructType> =
     /**
      * Defenitions of class properties
      */
-    props: StructDef<TModel,TClass>;
+    props: StructDef<TClass>;
 
     /**
      * Defines what fields constitute a primary key for the class. The key can be a single field
@@ -178,9 +187,9 @@ export type ClassDef<TModel extends Model, TClass extends StructType> =
 export type SchemaDef<TModel extends Model = {classes: {}, structs: {}}> =
 {
     classes: { [TName in ModelClassName<TModel>]:
-        ClassDef<TModel, ModelClass<TModel,TName> extends StructType ? ModelClass<TModel,TName> : never>}
+        ClassDef<ModelClass<TModel,TName> extends StructType ? ModelClass<TModel,TName> : never>}
     structs: { [TName in ModelStructName<TModel>]:
-        StructDef<TModel, ModelStruct<TModel,TName> extends StructType ? ModelStruct<TModel,TName> : never>}
+        StructDef<ModelStruct<TModel,TName> extends StructType ? ModelStruct<TModel,TName> : never>}
 }
 
 

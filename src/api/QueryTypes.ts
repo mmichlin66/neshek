@@ -19,7 +19,16 @@ import { StringKeys } from "./UtilTypes";
  *     - a single value - specifies the *equal* filter.
  *     - tuple with two values - specifies the *between* filter (if allowed by the property type).
  *     - an array of filter objects.
- * - Structure or single link property:
+ * - Structure property:
+ *   - `undefined` - this simply indicates that the structure should be retrieved with all its
+ *     scalar properties.
+ *   - Array of structure property names - the properties will be retrieved with default settings.
+ *   - String with comma-separated structure property names - the properties will be retrieved with
+ *     default settings. Note that there is no type checking of the property names.
+ *   - Object with structure property names as keys. This allows specifying options for each
+ *     included property.
+ *   - If filters are allowed, the property can specify:
+ *     - null - to indicate the "doesn't exist" filter
  *
  * For each property the following information is specified:
  * - scalar properties: boolean that determines whether to return this property if it is null

@@ -3,17 +3,6 @@ import { PropSet, Query } from "./QueryTypes";
 
 
 
-export interface IDBAdapter
-{
-    /**
-     * Flag indicating whether the underlying DB supports foreign keys and enforces their
-     * consistency.
-     */
-    readonly supportsReferentialIntegrity?: boolean;
-}
-
-
-
 /** Represents an error that can be produced by repository functions. */
 export type RepoError = {
     /** Error code - even if it is numerical it should be represented as string */
