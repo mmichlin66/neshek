@@ -1,5 +1,5 @@
 import { Model, KeyOfClass, ModelClassName, ModelClass } from "./ModelTypes"
-import { GetPropSet, Query } from "./QueryTypes";
+import { PropSet, Query } from "./QueryTypes";
 
 
 
@@ -16,8 +16,8 @@ export interface IDBAdapter
 
 /** Represents an error that can be produced by repository functions. */
 export type RepoError = {
-    /** Numerical error code */
-    code?: number;
+    /** Error code - even if it is numerical it should be represented as string */
+    code?: string;
 
     /** Error message */
     message?: string;
@@ -69,19 +69,19 @@ export interface IRepository<TModel extends Model>
      * @param key
      * @param props
      */
-    get<TName extends ModelClassName<TModel>, TClass extends ModelClass<TModel,TName>>(
+    get<TName extends ModelClassName<TModel>>(
         className: TName,
-        key: KeyOfClass<TClass>,
-        props?: GetPropSet<TClass>
-    ): Promise<RepoGetResponse<TClass>>;
+        key: KeyOfClass<ModelClass<TModel,TName>>,
+        props?: PropSet<ModelClass<TModel,TName>, false>
+    ): Promise<RepoGetResponse<ModelClass<TModel,TName>>>;
 
     /**
      * Retrieves multiple objects by the given criteria.
      * @param className
      * @param query
      */
-    query<TName extends ModelClassName<TModel>, TClass extends ModelClass<TModel,TName>>(
+    query<TName extends ModelClassName<TModel>>(
         className: TName,
-        query?: Query<TClass>
-    ): Promise<RepoQueryResponse<TClass>>;
+        query?: Query<ModelClass<TModel,TName>>
+    ): Promise<RepoQueryResponse<ModelClass<TModel,TName>>>;
 }

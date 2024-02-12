@@ -1,13 +1,14 @@
+import { Model } from "./ModelTypes";
 import { IDBAdapter, IRepository } from "./RepoTypes";
-import { Schema, SchemaModel } from "./SchemaTypes"
+import { SchemaDef } from "./SchemaTypes"
 
 
 
-export function createRepo<TSchema extends Schema>(schema: TSchema,
-    db: IDBAdapter): IRepository<SchemaModel<TSchema>>
+export function createRepo<TModel extends Model>(schema: SchemaDef<TModel>,
+    db: IDBAdapter): IRepository<TModel>
 {
     // TODO: implement
-    return {} as IRepository<SchemaModel<TSchema>>;
+    return {} as IRepository<TModel>;
 }
 
 

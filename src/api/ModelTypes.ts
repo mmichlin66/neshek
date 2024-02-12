@@ -15,7 +15,7 @@ export type ScalarType = string | number | boolean | bigint;
  * This is a recursive type because, for example, it can be an array of structures, where some
  * fields can also be arrays or structures.
  */
-export type PropType = ScalarType | Array<PropType> | MultiLink | StructType | NeshekClass<any>;
+export type PropType = ScalarType | Array<PropType> | MultiLink | StructType;
 
 /**
  * Represents a structure (object) with restricted property types.
@@ -39,17 +39,6 @@ export type MultiLink<TClass extends StructType = any> =
      */
     cursor?: string;
 }
-
-
-
-/** Represents a Scalar type or undefined. */
-export type ScalarOrUndefined = ScalarType | undefined;
-
-/** Represents a structure type or undefined. */
-export type StructOrUndefined = StructType | undefined;
-
-/** Represents an array type or undefined. */
-export type PropOrUndefined = PropType | undefined;
 
 
 
@@ -168,7 +157,7 @@ export type NeshekStructs<T extends NeshekStruct<any>[]> =
  * Type that combines types definitions of classes, structures and type aliases.
  */
 export type Model<TClasses extends NeshekClass<any>[] = [],
-    TStructs extends StructType[] = []> =
+    TStructs extends NeshekStruct<any>[] = []> =
 {
     classes: NeshekClasses<TClasses>;
     structs: NeshekStructs<TStructs>;

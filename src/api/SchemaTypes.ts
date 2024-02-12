@@ -175,43 +175,13 @@ export type ClassDef<TModel extends Model, TClass extends StructType> =
 /**
  * Represents a Schema, which combines definitions of classes, structures and type aliases.
  */
-export type Schema<TModel extends Model = {classes: {}, structs: {}}> =
+export type SchemaDef<TModel extends Model = {classes: {}, structs: {}}> =
 {
     classes: { [TName in ModelClassName<TModel>]:
         ClassDef<TModel, ModelClass<TModel,TName> extends StructType ? ModelClass<TModel,TName> : never>}
     structs: { [TName in ModelStructName<TModel>]:
         StructDef<TModel, ModelStruct<TModel,TName> extends StructType ? ModelStruct<TModel,TName> : never>}
 }
-
-/** Extracts the `Model` type from the given `Schema` type. */
-export type SchemaModel<TSchema> = TSchema extends Schema<infer TModel> ? TModel : never;
-
-
-
-/** Extracts `classes` object's type from the `Schema` type */
-export type SchemaClasses<TSchema extends Schema> = ModelClasses<SchemaModel<TSchema>>;
-
-/** Extracts type representing names of classes from the `Schema` type */
-export type SchemaClassName<TSchema extends Schema> = ModelClassName<SchemaModel<TSchema>>;
-
-/** Extracts type representing the classes with the given name from the `Schema` type */
-export type SchemaClass<TSchema extends Schema, TName extends SchemaClassName<TSchema>> =
-    ModelClass<SchemaModel<TSchema>, TName>;
-
-/** Extracts `structs` object's type from the `Schema` type */
-export type SchemaStructs<TSchema extends Schema> = ModelStructs<SchemaModel<TSchema>>;
-
-/** Extracts type representing names of structures from the `Schema` type */
-export type SchemaStructName<TSchema extends Schema> = ModelStructName<SchemaModel<TSchema>>;
-
-/** Extracts type representing the structure with the given name from the `Schema` type */
-export type SchemaStruct<TSchema extends Schema, TName extends SchemaStructName<TSchema>> =
-    ModelStruct<SchemaModel<TSchema>, TName>;
-
-
-/** Extracts type of primary key of the given Schema class type */
-export type KeyOfSchemaClass<TSchema extends Schema, TName extends SchemaClassName<TSchema>> =
-    KeyOfClass<SchemaClass<TSchema, TName>>;
 
 
 

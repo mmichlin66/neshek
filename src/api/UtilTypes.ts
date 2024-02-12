@@ -1,5 +1,8 @@
-/** Represents an array type or undefined. */
-export type ArrayOrUndefined<T> = T[] | undefined;
+/**
+ * From the given object, extracts array of names of string keys. This allows skipping keys, which
+ * are either numbers or symbols.
+ */
+export type StringKeys<T> = (keyof T & string)[];
 
 /**
  * Magic incantation necessary for the {@link XOR} type to work. Returns `keyof T`
@@ -69,23 +72,6 @@ export type ArrayToUnion<T extends any[]> = T[number]
 let x1: ArrayToUnion<[string, number, boolean]>;
 // Produces `string | number | Date`
 let x2: ArrayToUnion<(string | number | Date)[]>;
-
-// /**
-//  * Transforms the given array of generic types to union of types inferred from element types.
-//  * **Example:**
-//  * ```typescript
-//  * // Produces `string | number | boolean`
-//  * let x: ArrayToInferredArray<[string, number, boolean]>
-//  * ```
-//  */
-// export type ArrayToInferredArray<TArr extends any[]> = TArr extends (infer T)[]
-//     ? { [i in keyof TArr]: TArr[i] extends infer U ? U extends  : never }
-//     : never
-
-// type Elm<T> = {type: T}
-// type ElmTypes = string | number | boolean;
-// // Produces `string | number | boolean`
-// let t1: ArrayToInferredArray<[Elm<string>, Elm<number>, Elm<boolean>]>;
 
 
 
