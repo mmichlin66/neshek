@@ -2,6 +2,7 @@ import {
     PropType, MultiLink, Model, ModelClassName, KeyOfClass, ModelClass, ModelStructName,
     ModelStruct, StructType, NameOfClass
 } from "./ModelTypes";
+import { KeysToTuple } from "./UtilTypes";
 
 /**
  * Represents underlying data type corresponding to the given property type
@@ -168,11 +169,9 @@ export type ClassDef<TClass extends StructType> =
 
     /**
      * Defines what fields constitute a primary key for the class. The key can be a single field
-     * or a collection of fields. The `false` value indicates that the class doesn't have a
-     * primary key at all. If the `key` property is undefined and the class defines property named
-     * `id`, then it is used as a primary key.
+     * or a collection of fields.
      */
-    key?: (keyof KeyOfClass<TClass>)[];
+    key?: KeysToTuple<KeyOfClass<TClass>>;
 
     /**
      * If the class is declared abstract, no instances of it can be created in the repository.

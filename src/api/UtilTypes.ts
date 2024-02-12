@@ -34,18 +34,6 @@ export type XOR<T extends any[]> = {
   [i in keyof T]: T[i] & Partial<Record<Exclude<UnionKeys<T[number]>, keyof T[i]>, never>>;
 }[number];
 
-type User = {username: string, name: string, first?: string}
-type Group = {name: string, members?: string[]}
-
-let o1: User | Group = {username: "a", name: "b", members:[]}
-
-// @ts-expect-error: properies from different objects
-let o2: XOR<[User, Group]> = {username: "a", name: "b", members:[]}
-
-// no errors
-let o3: XOR<[User, Group]> = {username: "a", name: "b"}
-let o4: XOR<[User, Group]> = {name: "c", members: []}
-
 
 
 /**
@@ -68,10 +56,40 @@ export type UnionToIntersection<U> =
  */
 export type ArrayToUnion<T extends any[]> = T[number]
 
-// Produces `string | number | boolean`
-let x1: ArrayToUnion<[string, number, boolean]>;
-// Produces `string | number | Date`
-let x2: ArrayToUnion<(string | number | Date)[]>;
+
+
+/**
+ * Converts the given union type to a tuple with elements corresponding to union members.
+ * For example `UnionToTuple<"a" | "b">` produces `["a", "b"]`.
+ */
+export type UnionToTuple<T> = UnionToIntersection<T extends never
+  ? never
+  : (t: T) => T> extends (_: never) => infer W
+    ? [...UnionToTuple<Exclude<T, W>>, W]
+    : [];
+
+let ut1: UnionToTuple<"a" | "b"> = ["a", "b"];
+let ut2: UnionToTuple<"a"> = ["a"]
+let ut3: UnionToTuple<number> = [1]
+
+// @ts-expect-error
+let ut4: UnionToTuple<"a" | number> = ["a", 1, 2]
+
+
+
+
+/**
+ * Converts the given union type to a tuple with elements corresponding to union members.
+ * For example `UnionToTuple<"a" | "b">` produces `["a", "b"]`.
+ */
+export type KeysToTuple<T extends object> = UnionToTuple<keyof T>
+
+let kt1: KeysToTuple<{a: string, b: number}> = ["a", "b"]
+let kt2: KeysToTuple<{a: string}> = ["a"]
+let kt3: KeysToTuple<{}> = []
+
+// @ts-expect-error
+let kt4: KeysToTuple<{a: string, b: number}> = ["a", "b", "b"]
 
 
 
