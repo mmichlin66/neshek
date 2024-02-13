@@ -30,7 +30,6 @@ let ut4: UnionToTuple<"a" | number> = ["a", 1, 2]
 
 
 
-
 let kt1: KeysToTuple<{a: string, b: number}> = ["a", "b"]
 let kt2: KeysToTuple<{a: string}> = ["a"]
 let kt3: KeysToTuple<{}> = []
