@@ -8,6 +8,7 @@ export let mySchema: SchemaDef<MyModel> = {
             props: {
                 id: {dt: "i8"},
                 items: {dt: "ml", origin: "Item", originKey: ["order"]},
+                note: {dt: "struct",  props: {time: {dt: "i4"}, text: {dt: "s", maxlen: 200}}}
             },
             key: ["id"],
         },
@@ -22,15 +23,15 @@ export let mySchema: SchemaDef<MyModel> = {
         },
         "Item": {
             props: {
-                order: {dt: "l", target: "Order"},
-                product: {dt: "l", target: "Product"},
+                order: {dt: "l", target: "Order", keyProps: {id: "order_id"}},
+                product: {dt: "l", target: "Product", keyProps: {code: "product_code"}},
                 price: {dt: "r4", min: 0},
             },
             key: ["order", "product"],
         },
         "ExtraItemInfo": {
             props: {
-                item: {dt: "l", target: "Item"},
+                item: {dt: "l", target: "Item", keyProps: {order: {id: "order_id"}, product: {code: "product_code"}}},
                 comments: {dt: "arr", elm: {dt: "s"}},
             },
             key: ["item"],

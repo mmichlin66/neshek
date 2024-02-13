@@ -1,24 +1,28 @@
-import { ModelClass, ModelClassName, ModelClasses, Model, NeshekClass, KeyOfClass, MultiLink, NameOfClass, ModelStructName, ModelStructs, NeshekStruct } from "neshek";
+import {
+    ModelClass, ModelClassName, ModelClasses, Model, Class, KeyOfClass, MultiLink, NameOfClass,
+    ModelStructName, ModelStructs, NeshekStruct
+} from "neshek";
 import { XOR } from "../api/UtilTypes";
 
-export type Order = NeshekClass<"Order", {id: number}> &
+export type Order = Class<"Order", {id: number}> &
 {
     items?: MultiLink<Item>;
+    note?: Note;
 }
 
-export type Product = NeshekClass<"Product", {code: string}> &
+export type Product = Class<"Product", {code: string}> &
 {
     name?: string;
     msrp?: number;
     notes?: Note[];
 }
 
-export type Item = NeshekClass<"Item", {order: Order, product: Product}> &
+export type Item = Class<"Item", {order: Order, product: Product}> &
 {
     price?: number;
 }
 
-export type ExtraItemInfo = NeshekClass<"ExtraItemInfo", {item: Item}> &
+export type ExtraItemInfo = Class<"ExtraItemInfo", {item: Item}> &
 {
     comments: string[];
 }

@@ -1,6 +1,6 @@
 import {
     PropType, MultiLink, Model, ModelClassName, KeyOfClass, ModelClass, ModelStructName,
-    ModelStruct, StructType, NameOfClass
+    ModelStruct, StructType, NameOfClass, Class, NeshekStruct
 } from "./ModelTypes";
 import { KeysToTuple } from "./UtilTypes";
 
@@ -23,6 +23,20 @@ export type DataTypeOfPropType<T extends PropType> =
     T extends MultiLink ? "ml" :
     T extends StructType ? "struct" | "l" :
     never
+
+type C = Class<"C"> & {a?: string};
+
+let dt1: DataTypeOfPropType<C>;
+// let dt2: DataTypeOfPropType<Link<C>>;
+
+type S = NeshekStruct<"S">;
+let dt3: DataTypeOfPropType<S>;
+// let dt4: DataTypeOfPropType<Link<S>>;
+
+type S1 = {a: string};
+let dt5: DataTypeOfPropType<S1>;
+
+
 
 /**
  * Defines property definition attributes that are common for all data types
@@ -103,6 +117,9 @@ export type ArrayPropDef<TElm> = CommonPropDef &
     elm: PropDef<TElm>;
 }
 
+export type PrimaryKeyToFields<T extends object> =
+    { [P in keyof T & string]: T[P] extends Class<any, infer TKey> ? PrimaryKeyToFields<TKey> : string }
+
 /**
  * Contains attributes defining behavior of a single link field.
  * @typeParam TClass class that is a target of the link.
@@ -111,7 +128,38 @@ export type LinkPropDef<TClass> = CommonPropDef &
 {
     dt: "l";
     target: NameOfClass<TClass>,
+    keyProps: any;
 }
+
+// /**
+//  * Contains attributes defining behavior of a single link field.
+//  * @typeParam TClass class that is a target of the link.
+//  */
+// export type LinkPropDef<TName extends string, TKey extends StructType> = CommonPropDef &
+// {
+//     dt: "l";
+//     target: TName;
+
+//     /**
+//      * Property name(s) that keep the primary key of the target object. This is represented as
+//      * an object whose keys are the property names of the target's primary key and the values
+//      * are property names. The `keyProps` structure is recursive to support cases when a property
+//      * of the target's primary key consists of more than one fields.
+//      *
+//      * **Example:**
+//      * ```typescript
+//      * // primary key with one field
+//      * {id: "orderID"}
+//      *
+//      * // primary key with two fields
+//      * {firstName: "personFirstName", lastName: "personLastName", dob: "personDOB"}
+//      *
+//      * // hierarchical primary key (e.g to a cross link)
+//      * {order: {id: "orderID"}, product: {code: "productCode"}}
+//      * ```
+//      */
+//     keyProps: PrimaryKeyToFields<TKey>;
+// }
 
 /**
  * Contains attributes defining behavior of a multi link field pointing to a class or crosslink.
@@ -127,7 +175,7 @@ export type MultiLinkPropDef<TClass> = CommonPropDef &
 }
 
 /**
- * Contains attributes defining behavior of a field of a given TypeScript type.
+ * Represents attributes defining behavior of a field of a given type.
  */
 export type PropDef<T> =
 (
@@ -138,6 +186,8 @@ export type PropDef<T> =
     T extends Array<infer TElm> ? ArrayPropDef<TElm> :
     T extends MultiLink<infer TClass> ? MultiLinkPropDef<TClass> :
     T extends StructType ? LinkPropDef<T> | StructPropDef<T> :
+    // T extends Class<infer TName, infer TKey> ? LinkPropDef<TName, TKey> :
+    // T extends StructType ? StructPropDef<T> :
     never
 );
 

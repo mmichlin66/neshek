@@ -22,8 +22,17 @@ export type PropType = ScalarType | Array<PropType> | MultiLink | StructType;
  */
 export type StructType = { [P: string]: PropType }
 
-/** Extracts type for property names of the given stucture type */
-export type StructTypePropName<T> = T extends StructType ? keyof T : never;
+// /**
+//  * Symbol used only to make some information to be part of a link type.
+//  * @internal
+//  */
+// export const symLink = Symbol();
+
+// /**
+//  * Represents a single link to a given class.
+//  */
+// export type Link<TClass extends Class<any> = any> = TClass &
+//     { symLink?: TClass }
 
 /**
  * Represents a multi link to a given class.
@@ -75,9 +84,9 @@ export type NeshekClassInfo<TName extends string, TKey extends StructType,
  * constraints become properties of the class, so they should not be repeated in the type body.
  * If the class doesn't have primary key, specify `[]`, which is also a default of this parameter.
  */
-export type NeshekClass<TName extends string, TKey extends StructType = any, TUnique extends StructType[] = any> =
+export type Class<TName extends string, TKey extends StructType = any, TUnique extends StructType[] = any> =
     { [P in keyof TKey]?: TKey[P] } &
-    { [symNeshekClass]?: NeshekClassInfo<TName, TKey, TUnique> }
+    { readonly [symNeshekClass]?: NeshekClassInfo<TName, TKey, TUnique> }
 
 
 /**
@@ -97,9 +106,9 @@ export type NeshekClass<TName extends string, TKey extends StructType = any, TUn
  *
  * @typeParam T array of class types
  */
-export type NeshekClasses<T extends NeshekClass<any>[]> =
+export type NeshekClasses<T extends Class<any>[]> =
     UnionToIntersection<
-        { [i in keyof T]: T[i] extends NeshekClass<infer S> ? {[P in S]: T[i]} : never }[number]
+        { [i in keyof T]: T[i] extends Class<infer S> ? {[P in S]: T[i]} : never }[number]
     >
 
 
@@ -126,7 +135,7 @@ export type NeshekStructInfo<TName extends string> =
  * is the same as the TypeScript class name.
  */
 export type NeshekStruct<TName extends string> =
-    { [symNeshekStruct]?: NeshekStructInfo<TName> }
+    { readonly [symNeshekStruct]?: NeshekStructInfo<TName> }
 
 
 /**
@@ -156,7 +165,7 @@ export type NeshekStructs<T extends NeshekStruct<any>[]> =
 /**
  * Type that combines types definitions of classes, structures and type aliases.
  */
-export type Model<TClasses extends NeshekClass<any>[] = [],
+export type Model<TClasses extends Class<any>[] = [],
     TStructs extends NeshekStruct<any>[] = []> =
 {
     classes: NeshekClasses<TClasses>;
@@ -176,14 +185,14 @@ export type ModelClass<TModel extends Model, TName extends ModelClassName<TModel
     ModelClasses<TModel>[TName];
 
 /** Extracts class name type from the given class type */
-export type NameOfClass<TClass> = TClass extends NeshekClass<infer TName> ? TName : never;
+export type NameOfClass<TClass> = TClass extends Class<infer TName> ? TName : never;
 
 /**
  * Extracts primary key type of the given Model class type. For cross-link classes, it is a
  * combination of primary keys of the linked classes.
  */
-export type KeyOfClass<TClass> = TClass extends NeshekClass<infer TName, infer TKey>
-    ? { [P in keyof TKey]-?: TKey[P] extends NeshekClass<infer TName, infer TNestedClass>
+export type KeyOfClass<TClass> = TClass extends Class<infer TName, infer TKey>
+    ? { [P in keyof TKey]-?: TKey[P] extends Class<infer TName, infer TNestedClass>
         ? KeyOfClass<TNestedClass>
         : TKey[P] }
     : never;
