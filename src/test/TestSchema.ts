@@ -8,30 +8,33 @@ export let mySchema: SchemaDef<MyModel> = {
         "Order" : {
             props: {
                 id: {dt: "i8"},
-                time: {dt: "t", precision: "s"},
+                time: {dt: "ts", precision: "s"},
                 items: {dt: "ml", origin: "Item", originKey: ["order"]},
-                note: {dt: "struct", name: "Note"}
+                note: {dt: "obj", name: "Note"}
             },
             key: ["id"],
+            storageName: "Orders",
         },
         "Product": {
             props: {
                 code: {dt: "s", minlen: 8, maxlen: 8},
                 name: {dt: "s", minlen: 3, maxlen: 100},
-                msrp: {dt: "r4", min: 0},
+                msrp: {dt: "n", min: 0, prescision: [10,2]},
                 items: {dt: "ml", origin: "Item", originKey: ["product"]},
-                notes: {dt: "arr", elm: {dt: "struct", name: "Note"}}
+                notes: {dt: "arr", elm: {dt: "obj", name: "Note"}}
             },
             key: ["code"],
+            storageName: "Products",
         },
         "Item": {
             props: {
                 order: {dt: "l", target: "Order", keyProps: {id: "order_id"}},
                 product: {dt: "l", target: "Product", keyProps: {code: "product_code"}},
                 price: {dt: "r4", min: 0},
-                managerNotes: {dt: "struct", props: {manager: {dt: "s"}, note: {dt: "struct", name: "Note"}}}
+                managerNotes: {dt: "obj", props: {manager: {dt: "s"}, note: {dt: "obj", name: "Note"}}}
             },
             key: ["order", "product"],
+            storageName: "Items",
         },
         "ExtraItemInfo": {
             props: {

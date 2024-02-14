@@ -2,29 +2,62 @@ import {
     PropType, MultiLink, Model, ModelClassName, KeyOfClass, ModelClass, ModelStructName,
     ModelStruct, StructType, NameOfClass, Class, Struct
 } from "./ModelTypes";
-import { KeysToTuple } from "./UtilTypes";
+import { KeysToTuple, XOR } from "./UtilTypes";
 
 /**
- * Represents underlying data type corresponding to the given property type
+ * Represents underlying data types corresponding to property types:
+ * - string properties:
+ *   - "s" - string
+ *   - "d" - date only
+ *   - "t" - time only
+ *   - "dt" - datetime
+ * - boolean properties
+ *   - "b" - boolean
+ * - numeric properties
+ *   - "i1" | "i2" | "i4" | "i8" - signed integer of different sizes
+ *   - "u1" | "u2" | "u4" | "u8" - unsigned integer of different sizes
+ *   - "r4" | "r8" - floating-point numbers of single and double precision
+ *   - "n" - fixed-point numbers (DECIMAL/NUMERIC)
+ *   - "bit" - bit-values
+ * - bigint properties
+ *   - "i8" - signed integer of different sizes
+ *   - "u8" - unsigned integer of different sizes
+ *   - "n" - fixed-point numbers (DECIMAL/NUMERIC)
+ *   - "bv" - bit-values
+ * - Date properties
+ *   - "ts" - timestamp
+ * - Special properties
+ *   - "l" - single link
+ *   - "ml" - multi-link
+ *   - "obj" - structured object
+ *   - "arr" - array
  */
 export type DataType =
-    "s" | "b" | "i1" | "i2" | "i4" | "i8" | "u1" | "u2" | "u4" | "u8" | "r4" | "r8" |
-    "d" | "t" | "struct" | "arr" | "l" | "ml";
+    "s" |
+    "b" |
+    "i1" | "i2" | "i4" | "i8" | "u1" | "u2" | "u4" | "u8" | "r4" | "r8" | "n" | "bit" |
+    "d" | "t" | "dt" | "ts" |
+    "bin" |
+    "l" | "ml" |
+    "obj" | "arr";
+
+
 
 /**
  * Represents underlying data type corresponding to the given property type
  */
 export type DataTypeOfPropType<TModel extends Model, T extends PropType> =
-    T extends string ? "s" | "d" :
-    T extends number ? "i1" | "i2" | "i4" | "i8" | "u1" | "u2" | "u4" | "u8" | "r4" | "r8" :
-    T extends BigInt ? "i8" | "u8" :
+    T extends string ? "s" | "d" | "t" | "dt" :
+    T extends number ? "i1" | "i2" | "i4" | "u1" | "u2" | "u4" | "r4" | "r8" | "n" | "bv" | "ts" :
+    T extends BigInt ? "i8" | "u8" | "n" | "bv" | "ts" :
     T extends boolean ? "b" :
+    T extends Date ? "ts" :
     T extends Array<any> ? "arr" :
     T extends MultiLink ? "ml" :
-    T extends Class<infer TName, infer TKey> ? TName extends keyof TModel["classes"]
+    T extends Class<infer TName> ? TName extends keyof TModel["classes"]
         ? "l"
-        : T extends StructType ? "struct" : never :
-    T extends StructType ? "struct" :
+        : T extends StructType ? "obj" : never :
+    T extends StructType ? "obj" :
     never
 
 // type C = Class<"C"> & {a?: string};
@@ -80,15 +113,14 @@ export type StringPropDef = CommonPropDef &
 }
 
 /**
- * Contains attributes defining behavior of a number field
+ * Contains attributes defining behavior of an integer number field
  */
-export type NumberPropDef = CommonPropDef &
+export type IntPropDef = CommonPropDef &
 {
     dt: "i1" | "i2" | "i4" | "i8" | "u1" | "u2" | "u4" | "u8"| "r4" | "r8";
     min?: number;
     max?: number;
     step?: number;
-    choices?: number[];
 }
 
 /**
@@ -102,6 +134,35 @@ export type BigIntPropDef = CommonPropDef &
 }
 
 /**
+ * Contains attributes defining behavior of a floating-point real number field
+ */
+export type RealPropDef = CommonPropDef &
+{
+    dt: "r4" | "r8";
+    precision?: number;
+}
+
+/**
+ * Contains attributes defining behavior of a fixed-point real field
+ */
+export type DecimalPropDef = CommonPropDef &
+{
+    dt: "n";
+    prescision?: number | [number, number];
+    min?: number;
+    max?: number;
+}
+
+/**
+ * Contains attributes defining behavior of a bit-value field
+ */
+export type BitValuePropDef = CommonPropDef &
+{
+    dt: "bv";
+    size?: number;
+}
+
+/**
  * Contains attributes defining behavior of a Boolean field
  */
 export type BoolPropDef = CommonPropDef &
@@ -110,12 +171,38 @@ export type BoolPropDef = CommonPropDef &
 }
 
 /**
- * Contains attributes defining behavior of a time field
+ * Contains attributes defining behavior of a timestamp field
+ */
+export type TimestampPropDef = CommonPropDef &
+{
+    dt: "ts";
+    precision?: "h" | "m" | "s" | "ms" | "ns";
+}
+
+/**
+ * Contains attributes defining behavior of a date-only field
+ */
+export type DatePropDef = CommonPropDef &
+{
+    dt: "d";
+}
+
+/**
+ * Contains attributes defining behavior of a time-only field
  */
 export type TimePropDef = CommonPropDef &
 {
     dt: "t";
-    precision?: "h" | "m" | "s" | "ms" | "ns";
+    precision?: number;
+}
+
+/**
+ * Contains attributes defining behavior of a date-time field
+ */
+export type DateTimePropDef = CommonPropDef &
+{
+    dt: "dt";
+    precision?: number;
 }
 
 /**
@@ -173,7 +260,7 @@ export type MultiLinkPropDef<TClass> = CommonPropDef &
 /**
  * Contains attributes defining behavior of a structure field
  */
-export type StructPropDef<TModel extends Model, T> = CommonPropDef & {dt: "struct"} & (
+export type StructPropDef<TModel extends Model, T> = CommonPropDef & {dt: "obj"} & (
     T extends Struct<infer TName> ? TName extends keyof TModel["structs"]
         ? {name: TName}
         : T extends StructType ? {props: StructDef<TModel, T>} : never :
@@ -185,11 +272,11 @@ export type StructPropDef<TModel extends Model, T> = CommonPropDef & {dt: "struc
  */
 export type PropDef<TModel extends Model, T> =
 (
-    T extends string ? StringPropDef :
-    T extends number ? NumberPropDef :
-    T extends BigInt ? BigIntPropDef :
+    T extends string ? XOR<[StringPropDef, DatePropDef, TimePropDef, DateTimePropDef]> :
+    T extends number ? XOR<[IntPropDef, RealPropDef, DecimalPropDef, BitValuePropDef, TimestampPropDef]> :
+    T extends BigInt ? XOR<[BigIntPropDef, DecimalPropDef, BitValuePropDef, TimestampPropDef]> :
     T extends boolean ? BoolPropDef :
-    T extends Date ? TimePropDef :
+    T extends Date ? TimestampPropDef :
     T extends Array<infer TElm> ? ArrayPropDef<TModel, TElm> :
     T extends MultiLink<infer TClass> ? MultiLinkPropDef<TClass> :
     T extends Class<infer TName, infer TKey> ? TName extends keyof TModel["classes"]
@@ -236,6 +323,12 @@ export type ClassDef<TModel extends Model, TClass extends StructType> =
      * It can only be used as a base for other classes.
      */
     abstract?: boolean;
+
+    /**
+     * Name of the storage used to keep class instances. Usually, this is a table name. If this
+     * property is not defined, the default is the class name.
+     */
+    storageName?: string;
 }
 
 /**

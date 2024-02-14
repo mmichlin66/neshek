@@ -22,18 +22,6 @@ export type PropType = ScalarType | Array<PropType> | MultiLink | StructType;
  */
 export type StructType = { [P: string]: PropType }
 
-// /**
-//  * Symbol used only to make some information to be part of a link type.
-//  * @internal
-//  */
-// export const symLink = Symbol();
-
-// /**
-//  * Represents a single link to a given class.
-//  */
-// export type Link<TClass extends Class<any> = any> = TClass &
-//     { symLink?: TClass }
-
 /**
  * Represents a multi link to a given class.
  */
@@ -108,7 +96,7 @@ export type Class<TName extends string, TKey extends StructType = any, TUnique e
  */
 export type Classes<T extends Class<any>[]> =
     UnionToIntersection<
-        { [i in keyof T]: T[i] extends Class<infer S> ? {[P in S]: T[i]} : never }[number]
+        { [i in keyof T]: T[i] extends Class<infer TName> ? {[P in TName]: T[i]} : never }[number]
     >
 
 
@@ -157,7 +145,7 @@ export type Struct<TName extends string> =
  */
 export type Structs<T extends Struct<any>[]> =
     UnionToIntersection<
-        { [i in keyof T]: T[i] extends Struct<infer S> ? {[P in S]: T[i]} : never }[number]
+        { [i in keyof T]: T[i] extends Struct<infer TName> ? {[P in TName]: T[i]} : never }[number]
     >
 
 
@@ -190,9 +178,9 @@ export type NameOfClass<TClass> = TClass extends Class<infer TName> ? TName : ne
  * Extracts primary key type of the given Model class type. For cross-link classes, it is a
  * combination of primary keys of the linked classes.
  */
-export type KeyOfClass<TClass> = TClass extends Class<infer TName, infer TKey>
-    ? { [P in keyof TKey]-?: TKey[P] extends Class<infer TName, infer TNestedClass>
-        ? KeyOfClass<TNestedClass>
+export type KeyOfClass<TClass> = TClass extends Class<any, infer TKey>
+    ? { [P in keyof TKey]-?: TKey[P] extends Class<any>
+        ? KeyOfClass<TKey[P]>
         : TKey[P] }
     : never;
 
