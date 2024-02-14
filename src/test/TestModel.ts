@@ -1,11 +1,14 @@
 import {
     ModelClass, ModelClassName, ModelClasses, Model, Class, KeyOfClass, MultiLink, NameOfClass,
-    ModelStructName, ModelStructs, NeshekStruct
+    ModelStructName, ModelStructs, Struct
 } from "neshek";
 import { XOR } from "../api/UtilTypes";
 
+
+
 export type Order = Class<"Order", {id: number}> &
 {
+    time?: Date;
     items?: MultiLink<Item>;
     note?: Note;
 }
@@ -14,12 +17,14 @@ export type Product = Class<"Product", {code: string}> &
 {
     name?: string;
     msrp?: number;
+    items?: MultiLink<Item>;
     notes?: Note[];
 }
 
 export type Item = Class<"Item", {order: Order, product: Product}> &
 {
     price?: number;
+    managerNotes?: {manager: string, note: Note}
 }
 
 export type ExtraItemInfo = Class<"ExtraItemInfo", {item: Item}> &
@@ -27,7 +32,7 @@ export type ExtraItemInfo = Class<"ExtraItemInfo", {item: Item}> &
     comments: string[];
 }
 
-export type Note = NeshekStruct<"Note"> &
+export type Note = Struct<"Note"> &
 {
     time?: number;
     text?: string;

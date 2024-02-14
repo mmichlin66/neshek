@@ -2,22 +2,25 @@ import { SchemaDef } from "neshek"
 import { MyModel } from "./TestModel"
 
 
+
 export let mySchema: SchemaDef<MyModel> = {
     classes: {
         "Order" : {
             props: {
                 id: {dt: "i8"},
+                time: {dt: "t", precision: "s"},
                 items: {dt: "ml", origin: "Item", originKey: ["order"]},
-                note: {dt: "struct",  props: {time: {dt: "i4"}, text: {dt: "s", maxlen: 200}}}
+                note: {dt: "struct", name: "Note"}
             },
             key: ["id"],
         },
         "Product": {
             props: {
-                code: {dt: "s"},
+                code: {dt: "s", minlen: 8, maxlen: 8},
                 name: {dt: "s", minlen: 3, maxlen: 100},
                 msrp: {dt: "r4", min: 0},
-                notes: {dt: "arr", elm: {dt: "struct", props: {time: {dt: "i4"}, text: {dt: "s", maxlen: 200}}}}
+                items: {dt: "ml", origin: "Item", originKey: ["product"]},
+                notes: {dt: "arr", elm: {dt: "struct", name: "Note"}}
             },
             key: ["code"],
         },
@@ -26,6 +29,7 @@ export let mySchema: SchemaDef<MyModel> = {
                 order: {dt: "l", target: "Order", keyProps: {id: "order_id"}},
                 product: {dt: "l", target: "Product", keyProps: {code: "product_code"}},
                 price: {dt: "r4", min: 0},
+                managerNotes: {dt: "struct", props: {manager: {dt: "s"}, note: {dt: "struct", name: "Note"}}}
             },
             key: ["order", "product"],
         },

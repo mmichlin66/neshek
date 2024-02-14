@@ -12,7 +12,7 @@ export interface IDBAdapter
      */
     readonly supportsReferentialIntegrity?: boolean;
 
-    createTable(name: string, classDef: ClassDef<any>): void;
+    // createTable(name: string, classDef: ClassDef<any>): void;
 }
 
 

@@ -57,14 +57,14 @@ export type MultiLink<TClass extends StructType = any> =
  * using `keyof T & string`.
  * @internal
  */
-export const symNeshekClass = Symbol();
+export const symClass = Symbol();
 
 /**
  * Represents type information "assigned" to the symNeshekClass symbol. It includes class name,
  * primary key and unique constraints.
  * @internal
  */
-export type NeshekClassInfo<TName extends string, TKey extends StructType,
+export type ClassInfo<TName extends string, TKey extends StructType,
     TUnique extends StructType[]> =
 {
     name: TName;
@@ -86,7 +86,7 @@ export type NeshekClassInfo<TName extends string, TKey extends StructType,
  */
 export type Class<TName extends string, TKey extends StructType = any, TUnique extends StructType[] = any> =
     { [P in keyof TKey]?: TKey[P] } &
-    { readonly [symNeshekClass]?: NeshekClassInfo<TName, TKey, TUnique> }
+    { readonly [symClass]?: ClassInfo<TName, TKey, TUnique> }
 
 
 /**
@@ -95,7 +95,7 @@ export type Class<TName extends string, TKey extends StructType = any, TUnique e
  *
  * **Example:**
  * ```typescript
- * type MyClasses = NeshekClasses<[Order, Product]>;
+ * type MyClasses = Classes<[Order, Product]>;
  *
  * // the above line is equivalent to
  * type MyClasses = {
@@ -106,7 +106,7 @@ export type Class<TName extends string, TKey extends StructType = any, TUnique e
  *
  * @typeParam T array of class types
  */
-export type NeshekClasses<T extends Class<any>[]> =
+export type Classes<T extends Class<any>[]> =
     UnionToIntersection<
         { [i in keyof T]: T[i] extends Class<infer S> ? {[P in S]: T[i]} : never }[number]
     >
@@ -118,13 +118,13 @@ export type NeshekClasses<T extends Class<any>[]> =
  * struct name. We use symbol to be able to not enumerate it using `keyof T & string`.
  * @internal
  */
-export const symNeshekStruct = Symbol();
+export const symStruct = Symbol();
 
 /**
  * Represents type information "assigned" to the symNeshekStruct symbol. It includes struct name.
  * @internal
  */
-export type NeshekStructInfo<TName extends string> =
+export type StructInfo<TName extends string> =
 {
     name: TName;
 }
@@ -134,8 +134,8 @@ export type NeshekStructInfo<TName extends string> =
  * @typeParam TName name of the struct by which the struct can be referred to. Usually this name
  * is the same as the TypeScript class name.
  */
-export type NeshekStruct<TName extends string> =
-    { readonly [symNeshekStruct]?: NeshekStructInfo<TName> }
+export type Struct<TName extends string> =
+    { readonly [symStruct]?: StructInfo<TName> }
 
 
 /**
@@ -144,7 +144,7 @@ export type NeshekStruct<TName extends string> =
  *
  * **Example:**
  * ```typescript
- * type MyStructs = NeshekStructs<[Note, Comment]>;
+ * type MyStructs = Structs<[Note, Comment]>;
  *
  * // the above line is equivalent to
  * type MyStructs = {
@@ -155,9 +155,9 @@ export type NeshekStruct<TName extends string> =
  *
  * @typeParam T array of struct types
  */
-export type NeshekStructs<T extends NeshekStruct<any>[]> =
+export type Structs<T extends Struct<any>[]> =
     UnionToIntersection<
-        { [i in keyof T]: T[i] extends NeshekStruct<infer S> ? {[P in S]: T[i]} : never }[number]
+        { [i in keyof T]: T[i] extends Struct<infer S> ? {[P in S]: T[i]} : never }[number]
     >
 
 
@@ -165,11 +165,10 @@ export type NeshekStructs<T extends NeshekStruct<any>[]> =
 /**
  * Type that combines types definitions of classes, structures and type aliases.
  */
-export type Model<TClasses extends Class<any>[] = [],
-    TStructs extends NeshekStruct<any>[] = []> =
+export type Model<TClasses extends Class<any>[] = [], TStructs extends Struct<any>[] = []> =
 {
-    classes: NeshekClasses<TClasses>;
-    structs: NeshekStructs<TStructs>;
+    classes: Classes<TClasses>;
+    structs: Structs<TStructs>;
 }
 
 
@@ -210,7 +209,7 @@ export type ModelStruct<TModel extends Model, TName extends ModelStructName<TMod
     ModelStructs<TModel>[TName];
 
 /** Extracts class name type from the given class type */
-export type NameOfStruct<TStruct> = TStruct extends NeshekStruct<infer TName> ? TName : never;
+export type NameOfStruct<TStruct> = TStruct extends Struct<infer TName> ? TName : never;
 
 
 
