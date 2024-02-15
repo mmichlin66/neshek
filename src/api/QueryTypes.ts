@@ -43,7 +43,7 @@ import { StringKeys } from "./UtilTypes";
  * @typeParam T type whose retrieval options are specified. The type can be any allowed in the
  * `PropType` type, including scalars, structs, arrays and single and multi links.
  * @typeParam TAllowFilters flag determining whether to allow specifying filters for properties.
- * Filters are not allowed only for top-level class in the `get` operation (because the only
+ * Filters are not allowedfor top-level classes  only in the `get` operation (because the only
  * "filter" is either primary key or unique constraint). For the `query` operation, as well as
  * for multi-links on any level, filters are always allowed.
  */

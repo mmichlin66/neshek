@@ -300,7 +300,7 @@ export type StructDef<TModel extends Model, TStruct extends StructType> =
 /**
  * Represents definition of a class.
  */
-export type ClassDef<TModel extends Model, TClass extends StructType> =
+export type ClassDef<TModel extends Model = Model, TClass extends Class<string> = Class<string>> =
 {
     /**
      * Defines one or more base classes or structures.
@@ -323,18 +323,12 @@ export type ClassDef<TModel extends Model, TClass extends StructType> =
      * It can only be used as a base for other classes.
      */
     abstract?: boolean;
-
-    /**
-     * Name of the storage used to keep class instances. Usually, this is a table name. If this
-     * property is not defined, the default is the class name.
-     */
-    storageName?: string;
 }
 
 /**
  * Represents a Schema, which combines definitions of classes, structures and type aliases.
  */
-export type SchemaDef<TModel extends Model = {classes: {}, structs: {}}> =
+export type SchemaDef<TModel extends Model = Model> =
 {
     classes: { [TName in ModelClassName<TModel>]:
         ClassDef<TModel, ModelClass<TModel,TName> extends StructType ? ModelClass<TModel,TName> : never>}

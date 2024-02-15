@@ -48,9 +48,35 @@ export type RepoQueryResponse<TClass> = RepoResponse<{
 
 
 /**
- * Represents operations that can be performed by a repository.
+ * Represents options that can be provided when opening a new session.
+ */
+export type RepoSessionOptions =
+{
+    /**
+     * Either an array of strings representing user role names or a single string representing a
+     * name of a super-admin user - the user with no restrictions. If `authz` is undefined, it is
+     * a "guest" session.
+     */
+    authz?: string[] | string;
+}
+
+
+
+/**
+ * Represents an adapter that known to work with a database implementation. Neshek Repository
+ * object calls methods of this interface to read from and write to the database.
  */
 export interface IRepository<TModel extends Model>
+{
+    createSession(options?: RepoSessionOptions): IRepoSession<TModel>;
+}
+
+
+
+/**
+ * Represents operations that can be performed by a repository.
+ */
+export interface IRepoSession<TModel extends Model>
 {
     /**
      * Retrieves a single object by the given key

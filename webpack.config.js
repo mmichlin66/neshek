@@ -7,12 +7,14 @@ function config( outFileName, mode, devtool, ifdefLoaderOptions)
     return {
         entry: "./lib/index.js",
 
+        target: "node",
+
         output:
         {
             filename: outFileName,
             path: __dirname + "/lib",
-            library: 'neshek',
-            libraryTarget: 'umd',
+            // library: 'neshek',
+            // libraryTarget: 'umd',
             globalObject: 'this'
         },
 

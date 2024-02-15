@@ -1,10 +1,16 @@
-import { IDBAdapter, createRepo } from "neshek"
+import { IRepository, Model, SchemaDef } from "neshek"
 import { mySchema } from "./TestSchema";
 
 
-let repo = createRepo(mySchema, {} as IDBAdapter);
+function createRepo<TModel extends Model>(schema: SchemaDef<TModel>): IRepository<TModel>
+{
+    return {} as IRepository<TModel>;
+}
 
-let product = await repo.get("Product", {code: "123"}, {
+let repo = createRepo(mySchema);
+let session = repo.createSession();
+
+let product = await session.get("Product", {code: "123"}, {
     msrp: undefined,
     notes: {
         props: {
@@ -20,7 +26,7 @@ let product = await repo.get("Product", {code: "123"}, {
     a: undefined,
 });
 
-let product1 = await repo.get("Product", {code: "123"}, {
+let product1 = await session.get("Product", {code: "123"}, {
     fields: ["msrp"],
     notes: {
         props: ["text", "time"],
@@ -32,14 +38,14 @@ let product1 = await repo.get("Product", {code: "123"}, {
 });
 
 // @ts-expect-error (id is not primary key)
-let product12 = repo.get("Product", {id: "123"});
+let product12 = session.get("Product", {id: "123"});
 
-let product3 = await repo.get("Product", {code: "123"}, {
+let product3 = await session.get("Product", {code: "123"}, {
     fields: "msrp",
     notes: "text, time",
 });
 
-let order = repo.get("Order", {id: 123}, {
+let order = session.get("Order", {id: 123}, {
     id: undefined,
     items: {
         props: {
@@ -51,9 +57,9 @@ let order = repo.get("Order", {id: 123}, {
     a: undefined,
 });
 
-let order1 = repo.get("Order", {id: 123}, ["id", "items"]);
+let order1 = session.get("Order", {id: 123}, ["id", "items"]);
 
-let item = repo.get("Item", {order: {id: 123}, product: {code: "123"}}, {
+let item = session.get("Item", {order: {id: 123}, product: {code: "123"}}, {
     order: {
         id: undefined,
     },
@@ -66,15 +72,15 @@ let item = repo.get("Item", {order: {id: 123}, product: {code: "123"}}, {
     a: undefined,
 });
 
-let item1 = repo.get("Item", {order: {id: 123}, product: {code: "123"}}, ["order", "product", "price"]);
+let item1 = session.get("Item", {order: {id: 123}, product: {code: "123"}}, ["order", "product", "price"]);
 
 // @ts-expect-error (id is not primary key)
-let item2 = repo.get("Item", {order: {id: 123}, product: {id: "123"}});
+let item2 = session.get("Item", {order: {id: 123}, product: {id: "123"}});
 
-let extraItemInfo = repo.get("ExtraItemInfo", {item: {order: {id: 123}, product: {code: "123"}}});
+let extraItemInfo = session.get("ExtraItemInfo", {item: {order: {id: 123}, product: {code: "123"}}});
 
 // @ts-expect-error (Note is not a class)
-let note = repo.get("Note", {id: 123});
+let note = session.get("Note", {id: 123});
 
 
 

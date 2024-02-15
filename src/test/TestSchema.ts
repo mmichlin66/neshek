@@ -13,7 +13,6 @@ export let mySchema: SchemaDef<MyModel> = {
                 note: {dt: "obj", name: "Note"}
             },
             key: ["id"],
-            storageName: "Orders",
         },
         "Product": {
             props: {
@@ -24,7 +23,6 @@ export let mySchema: SchemaDef<MyModel> = {
                 notes: {dt: "arr", elm: {dt: "obj", name: "Note"}}
             },
             key: ["code"],
-            storageName: "Products",
         },
         "Item": {
             props: {
@@ -34,7 +32,6 @@ export let mySchema: SchemaDef<MyModel> = {
                 managerNotes: {dt: "obj", props: {manager: {dt: "s"}, note: {dt: "obj", name: "Note"}}}
             },
             key: ["order", "product"],
-            storageName: "Items",
         },
         "ExtraItemInfo": {
             props: {
