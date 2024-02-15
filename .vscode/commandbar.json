@@ -8,7 +8,7 @@
             "text": "neshek build",
             "color": "white",
             "commandType": "exec",
-            "command": "tsc -b && webpack --no-color",
+            "command": "npx tsc -b && webpack --no-color",
             "alignment": "left",
             "priority": 1
         },
@@ -23,8 +23,8 @@
         {
             "text": "typedoc",
             "color": "pink",
-            "commandType": "script",
-            "command": "typedoc",
+            "commandType": "exec",
+            "command": "npx typedoc",
             "alignment": "left",
             "priority": 1
         }

@@ -16,9 +16,9 @@ export let mySchema: SchemaDef<MyModel> = {
         },
         "Product": {
             props: {
-                code: {dt: "s", minlen: 8, maxlen: 8},
+                code: {dt: "s", minlen: 8, maxlen: 8, },
                 name: {dt: "s", minlen: 3, maxlen: 100},
-                msrp: {dt: "n", min: 0, prescision: [10,2]},
+                msrp: {dt: "n", min: 0, precision: [10,2]},
                 items: {dt: "ml", origin: "Item", originKey: ["product"]},
                 notes: {dt: "arr", elm: {dt: "obj", name: "Note"}}
             },

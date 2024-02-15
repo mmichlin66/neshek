@@ -148,7 +148,7 @@ export type RealPropDef = CommonPropDef &
 export type DecimalPropDef = CommonPropDef &
 {
     dt: "n";
-    prescision?: number | [number, number];
+    precision?: number | [number, number];
     min?: number;
     max?: number;
 }
@@ -272,9 +272,9 @@ export type StructPropDef<TModel extends Model, T> = CommonPropDef & {dt: "obj"}
  */
 export type PropDef<TModel extends Model, T> =
 (
-    T extends string ? XOR<[StringPropDef, DatePropDef, TimePropDef, DateTimePropDef]> :
-    T extends number ? XOR<[IntPropDef, RealPropDef, DecimalPropDef, BitValuePropDef, TimestampPropDef]> :
-    T extends BigInt ? XOR<[BigIntPropDef, DecimalPropDef, BitValuePropDef, TimestampPropDef]> :
+    T extends string ? StringPropDef | DatePropDef | TimePropDef | DateTimePropDef :
+    T extends number ? IntPropDef | RealPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
+    T extends BigInt ? BigIntPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
     T extends boolean ? BoolPropDef :
     T extends Date ? TimestampPropDef :
     T extends Array<infer TElm> ? ArrayPropDef<TModel, TElm> :

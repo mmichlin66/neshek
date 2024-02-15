@@ -167,9 +167,13 @@ export type ModelClasses<TModel extends Model> = TModel["classes"];
 /** Extracts type representing names of classes from the `Model` type */
 export type ModelClassName<TModel extends Model> = string & keyof ModelClasses<TModel>;
 
-/** Extracts type representing the classes with the given name from the `Model` type */
+/** Extracts type representing the class with the given name from the `Model` type */
 export type ModelClass<TModel extends Model, TName extends ModelClassName<TModel>> =
     ModelClasses<TModel>[TName];
+
+/** Extracts type representing the property names of the class with the given name from the `Model` type */
+export type ModelClassPropName<TModel extends Model, TName extends ModelClassName<TModel>> =
+    string & keyof ModelClass<TModel,TName>;
 
 /** Extracts class name type from the given class type */
 export type NameOfClass<TClass> = TClass extends Class<infer TName> ? TName : never;

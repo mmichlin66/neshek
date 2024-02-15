@@ -1,6 +1,7 @@
 {
     "readme": "none",
     "name": "Neshek Reference",
+    "githubPages": false,
 	"excludeExternals": true,
     "excludeInternal": true,
     "excludePrivate": true,
