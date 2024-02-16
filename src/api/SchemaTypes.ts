@@ -49,7 +49,7 @@ export type DataType =
 export type DataTypeOfPropType<TModel extends Model, T extends PropType> =
     T extends string ? "s" | "d" | "t" | "dt" :
     T extends number ? "i1" | "i2" | "i4" | "u1" | "u2" | "u4" | "r4" | "r8" | "n" | "bv" | "ts" :
-    T extends BigInt ? "i8" | "u8" | "n" | "bv" | "ts" :
+    T extends bigint ? "i8" | "u8" | "n" | "bv" | "ts" :
     T extends boolean ? "b" :
     T extends Date ? "ts" :
     T extends Array<any> ? "arr" :
@@ -271,10 +271,9 @@ export type StructPropDef<TModel extends Model, T> = CommonPropDef & {dt: "obj"}
  * Represents attributes defining behavior of a field of a given type.
  */
 export type PropDef<TModel extends Model, T> =
-(
     T extends string ? StringPropDef | DatePropDef | TimePropDef | DateTimePropDef :
     T extends number ? IntPropDef | RealPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
-    T extends BigInt ? BigIntPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
+    T extends bigint ? BigIntPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
     T extends boolean ? BoolPropDef :
     T extends Date ? TimestampPropDef :
     T extends Array<infer TElm> ? ArrayPropDef<TModel, TElm> :
@@ -284,7 +283,6 @@ export type PropDef<TModel extends Model, T> =
         : T extends StructType ? StructPropDef<TModel, T> : never :
     T extends StructType ? StructPropDef<TModel, T> :
     never
-);
 
 /**
  * Represents definition of a structured type, which defines property names and corresponding

@@ -1,4 +1,4 @@
-import { Model, KeyOfClass, ModelClassName, ModelClass } from "./ModelTypes"
+import { Model, ModelClassName, ModelClass, DeepKeyOfClass } from "./ModelTypes"
 import { PropSet, Query } from "./QueryTypes";
 
 
@@ -86,7 +86,7 @@ export interface IRepoSession<TModel extends Model>
      */
     get<TName extends ModelClassName<TModel>>(
         className: TName,
-        key: KeyOfClass<ModelClass<TModel,TName>>,
+        key: DeepKeyOfClass<ModelClass<TModel,TName>>,
         props?: PropSet<ModelClass<TModel,TName>, false>
     ): Promise<RepoGetResponse<ModelClass<TModel,TName>>>;
 

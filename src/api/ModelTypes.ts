@@ -72,8 +72,8 @@ export type ClassInfo<TName extends string, TKey extends StructType,
  * constraints become properties of the class, so they should not be repeated in the type body.
  * If the class doesn't have primary key, specify `[]`, which is also a default of this parameter.
  */
-export type Class<TName extends string, TKey extends StructType = any, TUnique extends StructType[] = any> =
-    { [P in keyof TKey]?: TKey[P] } &
+export type Class<TName extends string, TKey extends StructType = any, TUnique extends StructType[] = []> =
+    { [P in string & keyof TKey]?: TKey[P] } &
     { readonly [symClass]?: ClassInfo<TName, TKey, TUnique> }
 
 
@@ -182,7 +182,13 @@ export type NameOfClass<TClass> = TClass extends Class<infer TName> ? TName : ne
  * Extracts primary key type of the given Model class type. For cross-link classes, it is a
  * combination of primary keys of the linked classes.
  */
-export type KeyOfClass<TClass> = TClass extends Class<any, infer TKey>
+export type KeyOfClass<TClass> = TClass extends Class<any, infer TKey> ? TKey : never;
+
+/**
+ * Extracts primary key type of the given Model class type as a "deep" object, which goes down the
+ * object links (if links are part of the key) until scalar values are found.
+ */
+export type DeepKeyOfClass<TClass> = TClass extends Class<any, infer TKey>
     ? { [P in keyof TKey]-?: TKey[P] extends Class<any>
         ? KeyOfClass<TKey[P]>
         : TKey[P] }

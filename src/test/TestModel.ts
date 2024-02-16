@@ -1,8 +1,7 @@
 import {
     ModelClass, ModelClassName, ModelClasses, Model, Class, KeyOfClass, MultiLink, NameOfClass,
-    ModelStructName, ModelStructs, Struct
+    ModelStructName, ModelStructs, Struct, XOR
 } from "neshek";
-import { XOR } from "../api/UtilTypes";
 
 
 
