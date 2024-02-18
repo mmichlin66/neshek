@@ -1,5 +1,5 @@
 /**
- * Represents an adapter that known to work with a database implementation. Neshek Repository
+ * Represents an adapter that knows to work with a database implementation. Neshek Repository
  * object calls methods of this interface to read from and write to the database.
  */
 export interface IDBAdapter

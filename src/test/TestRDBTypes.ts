@@ -8,14 +8,15 @@ export let mySchema: RDBSchemaHints<MyModel> = {
         "Order" : {
             tableName: "orders",
             props: {
-                id: {typeName: "bigint"},
-                time: {typeName: "timestamp(3)"},
+                id: {columnType: "bigint"},
+                time: {columnType: "timestamp(3)"},
             },
         },
         "Product": {
             props: {
-                code: {typeName: "char(8)", },
-                notes: {typeName: "varchar"}
+                code: {columnType: "char(8)", },
+                notes: {columnType: "varchar"},
+                msrp: {name: "price", columnType: "decimal(10.2)"}
             },
         },
         "Item": {

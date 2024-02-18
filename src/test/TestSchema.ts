@@ -9,7 +9,7 @@ export let mySchema: SchemaDef<MyModel> = {
             props: {
                 id: {dt: "i8"},
                 time: {dt: "ts", precision: "s"},
-                items: {dt: "ml", origin: "Item", originKey: ["order"]},
+                items: {dt: "ml", origin: "Item", originKey: "order"},
                 note: {dt: "obj", name: "Note"}
             },
             key: ["id"],
@@ -18,8 +18,8 @@ export let mySchema: SchemaDef<MyModel> = {
             props: {
                 code: {dt: "s", minlen: 8, maxlen: 8, },
                 name: {dt: "s", minlen: 3, maxlen: 100},
-                msrp: {dt: "n", min: 0, precision: [10,2]},
-                items: {dt: "ml", origin: "Item", originKey: ["product"]},
+                msrp: {dt: "n", min: 0, precision: [10,2], },
+                items: {dt: "ml", origin: "Item", originKey: "product"},
                 notes: {dt: "arr", elm: {dt: "obj", name: "Note"}}
             },
             key: ["code"],

@@ -35,7 +35,7 @@ import { KeysToTuple, XOR } from "./UtilTypes";
 export type DataType =
     "s" |
     "b" |
-    "i1" | "i2" | "i4" | "i8" | "u1" | "u2" | "u4" | "u8" | "r4" | "r8" | "n" | "bit" |
+    "i1" | "i2" | "i4" | "i8" | "u1" | "u2" | "u4" | "u8" | "r4" | "r8" | "n" | "bv" | "bit" |
     "d" | "t" | "dt" | "ts" |
     "bin" |
     "l" | "ml" |
@@ -48,7 +48,7 @@ export type DataType =
  */
 export type DataTypeOfPropType<TModel extends Model, T extends PropType> =
     T extends string ? "s" | "d" | "t" | "dt" :
-    T extends number ? "i1" | "i2" | "i4" | "u1" | "u2" | "u4" | "r4" | "r8" | "n" | "bv" | "ts" :
+    T extends number ? "i1" | "i2" | "i4" | "u1" | "u2" | "u4" | "r4" | "r8" | "n" | "bv" | "bit" | "ts" :
     T extends bigint ? "i8" | "u8" | "n" | "bv" | "ts" :
     T extends boolean ? "b" :
     T extends Date ? "ts" :
@@ -87,6 +87,11 @@ export type ForeignKeyFields<TKey extends object> =
  */
 export type CommonPropDef =
 {
+    /**
+     * Property's data type that determines its structure and meaning.
+     */
+    dt: DataType,
+
     /**
      * Determines whether the field value must be unique across all objects of its class.
      * Default value: false.
@@ -129,8 +134,8 @@ export type IntPropDef = CommonPropDef &
 export type BigIntPropDef = CommonPropDef &
 {
     dt: "i8" | "u8";
-    min?: BigInt;
-    max?: BigInt;
+    min?: bigint;
+    max?: bigint;
 }
 
 /**
@@ -254,7 +259,7 @@ export type MultiLinkPropDef<TClass> = CommonPropDef &
 {
     dt: "ml";
     origin: NameOfClass<TClass>;
-    originKey: (keyof KeyOfClass<TClass>)[];
+    originKey: keyof TClass;
 }
 
 /**
@@ -270,7 +275,7 @@ export type StructPropDef<TModel extends Model, T> = CommonPropDef & {dt: "obj"}
 /**
  * Represents attributes defining behavior of a field of a given type.
  */
-export type PropDef<TModel extends Model, T> =
+export type PropDef<TModel extends Model = any, T = any> =
     T extends string ? StringPropDef | DatePropDef | TimePropDef | DateTimePropDef :
     T extends number ? IntPropDef | RealPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
     T extends bigint ? BigIntPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
@@ -298,7 +303,7 @@ export type StructDef<TModel extends Model, TStruct extends StructType> =
 /**
  * Represents definition of a class.
  */
-export type ClassDef<TModel extends Model = Model, TClass extends Class<string> = Class<string>> =
+export type ClassDef<TModel extends Model = any, TClass extends Class<string> = any> =
 {
     /**
      * Defines one or more base classes or structures.
@@ -326,7 +331,7 @@ export type ClassDef<TModel extends Model = Model, TClass extends Class<string> 
 /**
  * Represents a Schema, which combines definitions of classes, structures and type aliases.
  */
-export type SchemaDef<TModel extends Model = Model> =
+export type SchemaDef<TModel extends Model> =
 {
     classes: { [TName in ModelClassName<TModel>]:
         ClassDef<TModel, ModelClass<TModel,TName> extends StructType ? ModelClass<TModel,TName> : never>}
