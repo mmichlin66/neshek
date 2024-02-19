@@ -6,26 +6,38 @@ import { UnionToIntersection } from "./UtilTypes";
 export type ScalarType = string | number | boolean | bigint | Date;
 
 /**
- * Represents possible types of object properties, which can be one of the following:
- * - Simple scalar types: string, number, BigInt and Boolean
- * - Links: single and multi links
- * - Array of any possible types
- * - Structure containing fields of any possible types
- *
- * This is a recursive type because, for example, it can be an array of structures, where some
- * fields can also be arrays or structures.
+ * Represents possible types of properties in primary keys and unique constraints. These can be
+ * one of the following:
+ * - Simple scalar types: string, number, boolean, bigint and Date
+ * - Class types, which represent single links
  */
-export type PropType = ScalarType | Array<PropType> | MultiLink | StructType;
+export type KeyPropType = ScalarType | Class<string>;
 
 /**
- * Represents a structure (object) with restricted property types.
+ * Represents a structure (object) where keys are strings and values are one of the property types
+ * allowed in primary keys and unique constraints.
+ */
+export type KeyType = { [P: string]: KeyPropType }
+
+/**
+ * Represents possible types of object properties, which include types used for primary keys and
+ * unique constraints as well as the following additional types:
+ * - Multi-links
+ * - Array of any types
+ * - Structure containing fields of any types
+ */
+export type PropType = KeyPropType | Array<PropType> | MultiLink | StructType;
+
+/**
+ * Represents a structure (object) where keys are strings and values are one of the allowed
+ * property types.
  */
 export type StructType = { [P: string]: PropType }
 
 /**
  * Represents a multi link to a given class.
  */
-export type MultiLink<TClass extends StructType = any> =
+export type MultiLink<TClass extends Class<string> = Class<string>> =
 {
     /** Array of objects of the given class */
     elms?: TClass[];
@@ -52,8 +64,8 @@ export const symClass = Symbol();
  * primary key and unique constraints.
  * @internal
  */
-export type ClassInfo<TName extends string, TKey extends StructType,
-    TUnique extends StructType[]> =
+export type ClassInfo<TName extends string, TKey extends KeyType,
+    TUnique extends KeyType[]> =
 {
     name: TName;
     key?: TKey;
@@ -72,7 +84,7 @@ export type ClassInfo<TName extends string, TKey extends StructType,
  * constraints become properties of the class, so they should not be repeated in the type body.
  * If the class doesn't have primary key, specify `[]`, which is also a default of this parameter.
  */
-export type Class<TName extends string, TKey extends StructType = any, TUnique extends StructType[] = []> =
+export type Class<TName extends string, TKey extends KeyType = any, TUnique extends KeyType[] = []> =
     { [P in string & keyof TKey]?: TKey[P] } &
     { readonly [symClass]?: ClassInfo<TName, TKey, TUnique> }
 

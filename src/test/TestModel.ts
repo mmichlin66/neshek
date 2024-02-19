@@ -28,7 +28,7 @@ export type Item = Class<"Item", {order: Order, product: Product}> &
 
 export type ExtraItemInfo = Class<"ExtraItemInfo", {item: Item}> &
 {
-    comments: string[];
+    comments?: string[];
 }
 
 export type Note = Struct<"Note"> &
