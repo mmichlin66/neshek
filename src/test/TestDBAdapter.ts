@@ -55,11 +55,11 @@ export class TestDBAdapter implements IDBAdapter
         let dt = propDef.dt;
         let field: RDBProp["field"];
         let ft: string | undefined;
-        if (dt === "l")
+        if (dt === "link")
         {
             field = {};
         }
-        else if (dt !== "ml")
+        else if (dt !== "multilink")
         {
             // take field name from the property hint or make it the same as the property name
             field = propHints?.name as string ?? propName;
@@ -89,12 +89,13 @@ export class TestDBAdapter implements IDBAdapter
     {
         switch (propDef.dt)
         {
-            case "s": return !propDef.maxlen ? "varchar" :
+            case "str": return !propDef.maxlen ? "varchar" :
                 propDef.maxlen > 8000 ? `text(${propDef.maxlen})` :
                 `varchar(${propDef.maxlen})`;
-            case "b": return "tinyint";
-            case "i1": return "tinyint";
-            case "i2": return "tinyint";
+            case "bool": return "tinyint";
+            case "int": return "tinyint";
+            case "bigint": return "bigint";
+            case "real": return "float";
         }
 
         return "varchar";

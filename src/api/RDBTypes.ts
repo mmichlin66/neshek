@@ -196,7 +196,7 @@ export type RDBLinkField =
 
 function testPropDefToColumnType(propDef: PropDef): string
 {
-    if (propDef.dt === "s")
+    if (propDef.dt === "str")
     {
         if (!propDef.maxlen)
             return "varchar";
