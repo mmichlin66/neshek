@@ -27,12 +27,12 @@ export type RDBSchemaHints<TModel extends Model = any> =
     tableNameFunc?: (className: string) => string | undefined;
 
     /**
-     * Default function that generates column type based on property definition. This function is
-     * invoked only if the column type is not provide explicitly in the RDB property definition.
+     * Default function that generates field type based on property definition. This function is
+     * invoked only if the field type is not provide explicitly in the RDB property definition.
      * @param propDef Property definition
-     * @returns Column type string
+     * @returns Field type string
      */
-    columnTypeFunc?: (propDef: PropDef) => string;
+    fieldTypeFunc?: (propDef: PropDef) => string;
 
     /** Hints for individual classes */
     classes?: { [TName in ModelClassName<TModel>]:
@@ -81,7 +81,7 @@ export type RDBCommonPropHints =
     name?: string;
 
     /** Name of the field's data type. */
-    columnType?: string;
+    ft?: string;
 }
 
 /**
@@ -96,9 +96,9 @@ export type RDBScalarPropHints = RDBCommonPropHints
  * actual foreign key may consists of multiple fields. For each of these fields we need to provide
  * field name and type.
  */
-export type RDBLinkPropHints<TKey extends object> =
+export type RDBLinkPropHints<TKey extends object = object> =
 {
-    [P in keyof TKey & string]:
+    [P in string & keyof TKey]:
         // TKey[P] extends ScalarType ? RDBScalarPropHints :
         TKey[P] extends Class<any, infer TNestedKey> ? RDBLinkPropHints<TNestedKey> :
         RDBScalarPropHints

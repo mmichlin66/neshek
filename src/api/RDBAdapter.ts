@@ -1,7 +1,7 @@
 import {
     BoolPropDef,
     ClassDef, IDBAdapter, IntPropDef, LinkPropDef, Model, PropDef, RDBClass, RDBClassHints, RDBLinkField,
-    RDBLinkFields, RDBProp, RDBSchema, RDBSchemaHints, SchemaDef, StringPropDef
+    RDBLinkFields, RDBLinkPropHints, RDBProp, RDBScalarPropHints, RDBSchema, RDBSchemaHints, SchemaDef, StringPropDef
 } from "neshek";
 
 
@@ -32,7 +32,7 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
 
         // perform first pass over classes and process their regular properties
         for (let className in schema.classes)
-            rdbSchema[className] = this.createRDBClass(schema, schemaHints, className)
+            rdbSchema[className] = this.createClass(schema, schemaHints, className)
 
         // perform second pass over classes and process their link properties
         for (let className in rdbSchema)
@@ -51,7 +51,7 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
     }
 
     /** Creates RDBClass object and its properties except for the link properties */
-    private createRDBClass(schema: SchemaDef, schemaHints: RDBSchemaHints | undefined,
+    private createClass(schema: SchemaDef, schemaHints: RDBSchemaHints | undefined,
         className: string): RDBClass
     {
         let classDef = schema.classes[className];
@@ -65,12 +65,12 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
         }
 
         for (let propName in classDef.props)
-            rdbClass.props[propName] = this.createRDBProp(schema, schemaHints, classDef, classHints, propName);
+            rdbClass.props[propName] = this.createProp(schema, schemaHints, classDef, classHints, propName);
 
         return rdbClass;
     }
 
-    private createRDBProp(schema: SchemaDef, schemaHints: RDBSchemaHints | undefined,
+    private createProp(schema: SchemaDef, schemaHints: RDBSchemaHints | undefined,
         classDef: ClassDef, classHints: RDBClassHints | undefined, propName: string): RDBProp
     {
         let propDef = classDef.props[propName] as PropDef;
@@ -93,9 +93,9 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
 
             // determine field type either from the property hint or from the function in the
             // schema hint or from the default function according to the property type
-            ft = propHints?.columnType as string ??
-                schemaHints?.columnTypeFunc?.(propDef) ??
-                this.getColumnType(propDef);
+            ft = propHints?.ft as string ??
+                schemaHints?.fieldTypeFunc?.(propDef) ??
+                this.getFieldType(propDef);
         }
 
         return {name: propName, propDef, field, ft}
@@ -108,8 +108,8 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
     {
         let rdbLinkFields = {};
         let initialChain: string[] = [rdbProp.name];
-        this.fillRdbLinkFields(rdbLinkFields, initialChain, rdbSchema, schemaHints,
-            rdbClass, classHints, rdbProp);
+        this.fillLinkFields(rdbLinkFields, initialChain, rdbSchema, schemaHints,
+            rdbProp, classHints?.props?.[rdbProp.name]);
         rdbProp.field = rdbLinkFields;
     }
 
@@ -118,10 +118,9 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
      * function, which traverses the "tree" representing the key of the linked object pointed
      * to by the given property.
      */
-    private fillRdbLinkFields(rdbLinkFields: RDBLinkFields, leadingChain: string[],
+    private fillLinkFields(rdbLinkFields: RDBLinkFields, leadingChain: string[],
         rdbSchema: RDBSchema, schemaHints: RDBSchemaHints<any> | undefined,
-        rdbClass: RDBClass, classHints: RDBClassHints | undefined,
-        rdbProp: RDBProp): void
+        rdbProp: RDBProp, propHints: RDBLinkPropHints | RDBScalarPropHints | undefined): void
     {
         // get the key of the target class
         let targetClassName = (rdbProp.propDef as LinkPropDef).target;
@@ -142,20 +141,20 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
             // get property definition and check the data type
             let keyPropDef = targetClassDef.props[keyPropName];
             let keyRdbProp = targetRdbClass.props[keyPropName];
-            let keyPropHints = classHints?.props?.[keyPropName];
+            let keyPropHints = propHints?.[keyPropName];
             if (keyPropDef.dt !== "link")
             {
                 // field name is either taken from the property hints or is created by
                 // joining all fields in the chain with underscore
-                let fieldName = keyPropHints?.columnType as string ?? newChain.join("_");
-                let rdbLinkField: RDBLinkField = {propChain: newChain, ft: keyRdbProp.ft!};
-                rdbLinkFields[fieldName] = rdbLinkField;
+                let fieldName = keyPropHints?.name as string ?? newChain.join("_");
+                let ft = keyPropHints?.ft ?? keyRdbProp.ft!
+                rdbLinkFields[fieldName] = {propChain: newChain, ft};
             }
             else
             {
                 let targetClassHints =  schemaHints?.classes?.[targetClassName];
-                this.fillRdbLinkFields(rdbLinkFields, newChain, rdbSchema, schemaHints,
-                    targetRdbClass, targetClassHints, keyRdbProp);
+                this.fillLinkFields(rdbLinkFields, newChain, rdbSchema, schemaHints,
+                    keyRdbProp, keyPropHints);
             }
         }
     }
@@ -167,13 +166,13 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
      * @param propDef Object describing the property
      * @returns SQL type name
      */
-    protected getColumnType(propDef: PropDef): string
+    protected getFieldType(propDef: PropDef): string
     {
         switch (propDef.dt)
         {
-            case "str": return this.getStringColumnType(propDef);
-            case "bool": return this.getBoolColumnType(propDef);
-            case "int": return this.getIntColumnType(propDef);
+            case "str": return this.getStringFieldType(propDef);
+            case "bool": return this.getBoolFieldType(propDef);
+            case "int": return this.getIntFieldType(propDef);
             case "bigint": return "bigint";
             case "real": return "float";
         }
@@ -188,7 +187,7 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
      * @param propDef Object describing the string property
      * @returns SQL type name
      */
-    protected getStringColumnType(propDef: StringPropDef): string
+    protected getStringFieldType(propDef: StringPropDef): string
     {
        return !propDef.maxlen ? "varchar" :
                 propDef.maxlen > 8000 ? `text(${propDef.maxlen})` :
@@ -202,7 +201,7 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
      * @param propDef Object describing the boolean property
      * @returns SQL type name
      */
-    protected getBoolColumnType(propDef: BoolPropDef): string
+    protected getBoolFieldType(propDef: BoolPropDef): string
     {
        return "tinyint";
     }
@@ -214,7 +213,7 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
      * @param propDef Object describing the integer property
      * @returns SQL type name
      */
-    protected getIntColumnType(propDef: IntPropDef): string
+    protected getIntFieldType(propDef: IntPropDef): string
     {
        return "int";
     }

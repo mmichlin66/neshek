@@ -8,15 +8,15 @@ export let myHints: RDBSchemaHints<MyModel> = {
         "Order" : {
             tableName: "orders",
             props: {
-                id: {columnType: "bigint"},
-                time: {columnType: "timestamp(3)"},
+                id: {ft: "bigint"},
+                time: {ft: "timestamp(3)"},
             },
         },
         "Product": {
             props: {
-                code: {columnType: "char(8)", },
-                notes: {columnType: "varchar"},
-                msrp: {name: "price", columnType: "decimal(10.2)"}
+                code: {ft: "char(8)", },
+                notes: {ft: "varchar"},
+                msrp: {name: "price", ft: "decimal(10.2)"}
             },
         },
         "Item": {
@@ -27,7 +27,7 @@ export let myHints: RDBSchemaHints<MyModel> = {
         },
         "ExtraItemInfo": {
             props: {
-                item: {order: {id: {name: "order_id"}}, product: {code: {name: "product_code"}}},
+                item: {order: {id: {name: "orderId", ft: "int"}}, product: {code: {name: "productCode"}}},
             },
         },
     },
