@@ -73,7 +73,7 @@ export type UnionToTuple<T> =
  * Converts the given union type to a tuple with elements corresponding to union members.
  * For example, `KeysToTuple<{a: string, b: number}>` produces `["a", "b"]`.
  */
-export type KeysToTuple<T extends object> = UnionToTuple<keyof T>
+export type KeysToTuple<T extends object> = UnionToTuple<string & keyof T>
 
 
 

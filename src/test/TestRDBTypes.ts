@@ -3,7 +3,7 @@ import { MyModel } from "./TestModel"
 
 
 
-export let mySchema: RDBSchemaHints<MyModel> = {
+export let myHints: RDBSchemaHints<MyModel> = {
     classes: {
         "Order" : {
             tableName: "orders",

@@ -5,7 +5,7 @@ const prod_ifdefLoaderOptions = { DEBUG: false };
 function config( outFileName, mode, devtool, ifdefLoaderOptions)
 {
     return {
-        entry: "./lib/index.js",
+        entry: "./lib/main.js",
 
         target: "node",
 

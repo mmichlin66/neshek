@@ -1,7 +1,7 @@
 import {
     Class, KeyOfClass, Model, ModelClass, ModelClassName, MultiLink, ScalarType, StructType
 } from "./ModelTypes";
-import { CommonPropDef, DataType, PropDef } from "./SchemaTypes";
+import { ClassDef, PropDef } from "./SchemaTypes";
 
 
 
@@ -10,7 +10,7 @@ import { CommonPropDef, DataType, PropDef } from "./SchemaTypes";
  * This allows providing table names for classes, field names for linked objects' primary keys
  * and other parameters.
  */
-export type RDBSchemaHints<TModel extends Model> =
+export type RDBSchemaHints<TModel extends Model = any> =
 {
     /**
      * Default function that generates a table name for the given class name. This function is
@@ -32,7 +32,7 @@ export type RDBSchemaHints<TModel extends Model> =
      * @param propDef Property definition
      * @returns Column type string
      */
-    columnTypeFunc?: (propName: string, propDef: PropDef) => string;
+    columnTypeFunc?: (propDef: PropDef) => string;
 
     /** Hints for individual classes */
     classes?: { [TName in ModelClassName<TModel>]:
@@ -62,7 +62,7 @@ export type RDBClassHints<TModel extends Model = any, TClass extends Class<strin
  * Represents information on how the property structure from the model should be applied to a
  * relational data base.
  */
-export type RDBPropHints<TModel extends Model, T> =
+export type RDBPropHints<TModel extends Model = any, T = any> =
     T extends ScalarType ? RDBScalarPropHints :
     T extends Array<infer TElm> ? RDBScalarPropHints :
     T extends MultiLink<infer TClass> ? never :
@@ -116,6 +116,12 @@ export type RDBSchema = { [P: string]: RDBClass }
  */
 export type RDBClass =
 {
+    /** Class name */
+    name: string;
+
+    /** Class definition */
+    classDef: ClassDef;
+
     /** Table name */
     table: string;
 
@@ -144,6 +150,9 @@ export type RDBClass =
  */
 export type RDBProp =
 {
+    /** Property name */
+    name: string;
+
     /** Property definition from the schema definition */
     propDef: PropDef;
 
@@ -152,7 +161,7 @@ export type RDBProp =
      * is an object where the keys are field names and the values are arrays of property names to
      * get to the value of the appropriate key part. This property is undefined for multi-links.
      */
-    field?: string | Record<string, RDBLinkField>;
+    field?: string | RDBLinkFields;
 
     // /**
     //  * ???
@@ -172,6 +181,13 @@ export type RDBProp =
 
 
 /**
+ * Represents the fields constituting a foreign key, which is an object where the keys are field
+ * names and the values are arrays of property names to get to the value of the appropriate key
+ * part.
+ */
+export type RDBLinkFields = Record<string, RDBLinkField>;
+
+/**
  * Information about single-link property in the processed schema. It contains information about
  * the field(s) constituting the foreign key and their types. In addition, it has a chain of
  * property names of nested keys - in case the key of a target class itself contains a foreign key.
@@ -179,34 +195,15 @@ export type RDBProp =
 export type RDBLinkField =
 {
     /**
-     * If the property is a scalar, then this is field name. If the property is a link, then this
-     * is an object where the keys are field names and the values are arrays of property names to
-     * get to the value of the appropriate key part. This property is undefined for multi-links.
+     * Array of property names of linked objects` keys up to the scalar property.
      */
-    propChain?: string[];
+    propChain: string[];
 
     /**
      * Database-specific type of the field corresponding to the property. This can be undefined
      * if the property is a link, which consists of more than one field, or if it is a multi-link.
      */
-    ft?: string;
-}
-
-
-
-function testPropDefToColumnType(propDef: PropDef): string
-{
-    if (propDef.dt === "str")
-    {
-        if (!propDef.maxlen)
-            return "varchar";
-        else if (propDef.maxlen > 8000)
-            return `text(${propDef.maxlen})`;
-        else
-            return `varchar(${propDef.maxlen})`;
-    }
-
-    return "varchar";
+    ft: string;
 }
 
 

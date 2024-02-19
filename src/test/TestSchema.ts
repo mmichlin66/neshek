@@ -26,8 +26,8 @@ export let mySchema: SchemaDef<MyModel> = {
         },
         "Item": {
             props: {
-                order: {dt: "link", target: "Order", keyProps: {id: "order_id"}},
-                product: {dt: "link", target: "Product", keyProps: {code: "product_code"}},
+                order: {dt: "link", target: "Order"},
+                product: {dt: "link", target: "Product"},
                 price: {dt: "real", min: 0},
                 managerNotes: {dt: "obj", props: {manager: {dt: "str"}, note: {dt: "obj", name: "Note"}}}
             },
@@ -35,7 +35,7 @@ export let mySchema: SchemaDef<MyModel> = {
         },
         "ExtraItemInfo": {
             props: {
-                item: {dt: "link", target: "Item", keyProps: {order: {id: "order_id"}, product: {code: "product_code"}}},
+            item: {dt: "link", target: "Item", /*keyProps: {order: {id: "order_id"}, product: {code: "product_code"}}*/},
                 comments: {dt: "arr", elm: {dt: "str"}},
             },
             key: ["item"],

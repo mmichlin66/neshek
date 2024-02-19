@@ -235,30 +235,30 @@ export type ArrayPropDef<TModel extends Model, TElm> = CommonPropDef &
  * Contains attributes defining behavior of a single link property.
  * @typeParam TClass class that is a target of the link.
  */
-export type LinkPropDef<TName extends string, TKey extends StructType> = CommonPropDef &
+export type LinkPropDef<TName extends string = string> = CommonPropDef &
 {
     dt: "link";
     target: TName;
 
-    /**
-     * Property name(s) that keep the primary key of the target object. This is represented as
-     * an object whose keys are the property names of the target's primary key and the values
-     * are property names. The `keyProps` structure is recursive to support cases when a property
-     * of the target's primary key consists of more than one fields.
-     *
-     * **Example:**
-     * ```typescript
-     * // primary key with one field
-     * {id: "orderID"}
-     *
-     * // primary key with two fields
-     * {firstName: "personFirstName", lastName: "personLastName", dob: "personDOB"}
-     *
-     * // hierarchical primary key (e.g to a cross link)
-     * {order: {id: "orderID"}, product: {code: "productCode"}}
-     * ```
-     */
-    keyProps: ForeignKeyFields<TKey>;
+    // /**
+    //  * Property name(s) that keep the primary key of the target object. This is represented as
+    //  * an object whose keys are the property names of the target's primary key and the values
+    //  * are property names. The `keyProps` structure is recursive to support cases when a property
+    //  * of the target's primary key consists of more than one fields.
+    //  *
+    //  * **Example:**
+    //  * ```typescript
+    //  * // primary key with one field
+    //  * {id: "orderID"}
+    //  *
+    //  * // primary key with two fields
+    //  * {firstName: "personFirstName", lastName: "personLastName", dob: "personDOB"}
+    //  *
+    //  * // hierarchical primary key (e.g to a cross link)
+    //  * {order: {id: "orderID"}, product: {code: "productCode"}}
+    //  * ```
+    //  */
+    // keyProps: ForeignKeyFields<TKey>;
 }
 
 /**
@@ -271,7 +271,7 @@ export type MultiLinkPropDef<TClass> = CommonPropDef &
 {
     dt: "multilink";
     origin: NameOfClass<TClass>;
-    originKey: keyof TClass;
+    originKey: string & keyof TClass;
 }
 
 /**
@@ -295,8 +295,8 @@ export type PropDef<TModel extends Model = any, T = any> =
     T extends Date ? TimestampPropDef :
     T extends Array<infer TElm> ? ArrayPropDef<TModel, TElm> :
     T extends MultiLink<infer TClass> ? MultiLinkPropDef<TClass> :
-    T extends Class<infer TName, infer TKey> ? TName extends keyof TModel["classes"]
-        ? LinkPropDef<TName, TKey>
+    T extends Class<infer TName> ? TName extends keyof TModel["classes"]
+        ? LinkPropDef<TName>
         : T extends StructType ? StructPropDef<TModel, T> : never :
     T extends StructType ? StructPropDef<TModel, T> :
     never
@@ -343,7 +343,7 @@ export type ClassDef<TModel extends Model = any, TClass extends Class<string> = 
 /**
  * Represents a Schema, which combines definitions of classes, structures and type aliases.
  */
-export type SchemaDef<TModel extends Model> =
+export type SchemaDef<TModel extends Model = any> =
 {
     classes: { [TName in ModelClassName<TModel>]:
         ClassDef<TModel, ModelClass<TModel,TName> extends StructType ? ModelClass<TModel,TName> : never>}
