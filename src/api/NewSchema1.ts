@@ -13,7 +13,7 @@ export type ScalarType = string | number | boolean | bigint | Date;
  * - Simple scalar types: string, number, boolean, bigint and Date
  * - Class types, which represent single links
  */
-export type KeyPropType = ScalarType | Class<any,any,any>;
+export type KeyPropType = ScalarType | AClass;
 
 /**
  * Represents a structure (object) where keys are strings and values are one of the property types
@@ -28,7 +28,7 @@ export type KeyType = { [P: string]: KeyPropType }
  * - Array of any types
  * - Structure containing fields of any types
  */
-export type PropType = KeyPropType | Array<PropType> | MultiLink | StructType;
+export type PropType = KeyPropType | Array<PropType> | MultiLink<AClass> | StructType;
 
 /**
  * Represents a structure (object) where keys are strings and values are one of the allowed
@@ -39,7 +39,7 @@ export type StructType = { [P: string]: PropType }
 /**
  * Represents a multi link to a given class.
  */
-export type MultiLink<C extends Class<any,any,any> = Class<any,any,any>> =
+export type MultiLink<C extends AClass> =
 {
     /** Array of objects of the given class */
     elms?: C[];
@@ -126,7 +126,7 @@ type ModelClassProp<M extends AModel, CN extends ModelClassName<M>,
  * Extracts primary key type of the given Model class type. For cross-link classes, it is a
  * combination of primary keys of the linked classes.
  */
-type KeyOfClass<C extends AClass> = C extends Class<any, infer TKey, any> ? TKey : never;
+type KeyOfClass<C extends AClass> = C extends Class<any, infer K, any> ? K : never;
 
 
 

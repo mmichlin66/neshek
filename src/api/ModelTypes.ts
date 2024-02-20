@@ -11,7 +11,7 @@ export type ScalarType = string | number | boolean | bigint | Date;
  * - Simple scalar types: string, number, boolean, bigint and Date
  * - Class types, which represent single links
  */
-export type KeyPropType = ScalarType | Class<string>;
+export type KeyPropType = ScalarType | AClass;
 
 /**
  * Represents a structure (object) where keys are strings and values are one of the property types
@@ -26,21 +26,22 @@ export type KeyType = { [P: string]: KeyPropType }
  * - Array of any types
  * - Structure containing fields of any types
  */
-export type PropType = KeyPropType | Array<PropType> | MultiLink | StructType;
+export type PropType = KeyPropType | MultiLink<AClass>;
+// export type PropType = KeyPropType | Array<PropType> | MultiLink<AClass> | StructType;
 
-/**
- * Represents a structure (object) where keys are strings and values are one of the allowed
- * property types.
- */
-export type StructType = { [P: string]: PropType }
+// /**
+//  * Represents a structure (object) where keys are strings and values are one of the allowed
+//  * property types.
+//  */
+// export type StructType = { [P: string]: PropType }
 
 /**
  * Represents a multi link to a given class.
  */
-export type MultiLink<TClass extends Class<string> = Class<string>> =
+export type MultiLink<C extends AClass> =
 {
     /** Array of objects of the given class */
-    elms?: TClass[];
+    elms?: C[];
 
     /**
      * Cursor that can be used to retrieve additional objects. If cursor is undefined, there
@@ -54,40 +55,37 @@ export type MultiLink<TClass extends Class<string> = Class<string>> =
 /**
  * Symbol used only to make some information to be part of class type. This iformation includes
  * class name, primary key and unique constraints. We use symbol to be able to not enumerate it
- * using `keyof T & string`.
+ * using `string & keyof T`.
  * @internal
  */
 export const symClass = Symbol();
 
 /**
- * Represents type information "assigned" to the symNeshekClass symbol. It includes class name,
- * primary key and unique constraints.
- * @internal
- */
-export type ClassInfo<TName extends string, TKey extends KeyType,
-    TUnique extends KeyType[]> =
-{
-    name: TName;
-    key?: TKey;
-    unique?: TUnique;
-}
-
-/**
  * Type from which all types representing Neshek model classes should derive.
- * @typeParam TName name of the class by which the class can be referred to when invoking
+ * @typeParam CN Name of the class by which the class can be referred to when invoking
  * repository operations. This name most likely will be the name of the table used in the
  * repository. Usually this name is the same as the TypeScript class name.
- * @typeParam TKey type representing the primary key of the class. All properties of this type
+ * @typeParam K Type representing the primary key of the class. All properties of this type
  * become properties of the class, so they should not be repeated in the type body. If the class
  * doesn't have primary key, specify `{}`, which is also a default of this parameter.
- * @typeParam TUnique type representing unique constraints of the class. Properties of all
+ * @typeParam U Type representing unique constraints of the class. Properties of all
  * constraints become properties of the class, so they should not be repeated in the type body.
  * If the class doesn't have primary key, specify `[]`, which is also a default of this parameter.
  */
-export type Class<TName extends string, TKey extends KeyType = any, TUnique extends KeyType[] = []> =
-    { [P in string & keyof TKey]?: TKey[P] } &
-    { readonly [symClass]?: ClassInfo<TName, TKey, TUnique> }
+export type Class<CN extends string, K extends KeyType | undefined, U extends KeyType[] | undefined> =
+{
+    readonly [symClass]?: {
+        name: CN,
+        key: K,
+        uc: U
+    }
+}
 
+/**
+ * Helper type with all template parameters set to `any`. This is needed for easier referencing
+ * in other type definitions.
+ */
+export type AClass = Class<any,any,any>
 
 /**
  * Transforms array of Neshek class types into object type where keys are class names and
@@ -106,9 +104,9 @@ export type Class<TName extends string, TKey extends KeyType = any, TUnique exte
  *
  * @typeParam T array of class types
  */
-export type Classes<T extends Class<any>[]> =
+export type Classes<T extends AClass[]> =
     UnionToIntersection<
-        { [i in keyof T]: T[i] extends Class<infer TName> ? {[P in TName]: T[i]} : never }[number]
+        { [i in keyof T]: T[i] extends Class<infer TName,any,any> ? {[P in TName]: T[i]} : never }[number]
     >
 
 
@@ -121,22 +119,22 @@ export type Classes<T extends Class<any>[]> =
 export const symStruct = Symbol();
 
 /**
- * Represents type information "assigned" to the symNeshekStruct symbol. It includes struct name.
- * @internal
- */
-export type StructInfo<TName extends string> =
-{
-    name: TName;
-}
-
-/**
  * Type from which all types representing Neshek model structures should derive.
- * @typeParam TName name of the struct by which the struct can be referred to. Usually this name
+ * @typeParam SN Name of the struct by which the struct can be referred to. Usually this name
  * is the same as the TypeScript class name.
  */
-export type Struct<TName extends string> =
-    { readonly [symStruct]?: StructInfo<TName> }
+export type Struct<SN extends string> =
+    {
+        readonly [symStruct]?: {
+            name: SN;
+        }
+    }
 
+/**
+ * Helper type with all template parameters set to `any`. This is needed for easier referencing
+ * in other type definitions.
+ */
+export type AStruct = Struct<any>
 
 /**
  * Transforms array of Neshek struct types into object type where keys are struct names and
@@ -155,7 +153,7 @@ export type Struct<TName extends string> =
  *
  * @typeParam T array of struct types
  */
-export type Structs<T extends Struct<any>[]> =
+export type Structs<T extends AStruct[]> =
     UnionToIntersection<
         { [i in keyof T]: T[i] extends Struct<infer TName> ? {[P in TName]: T[i]} : never }[number]
     >
@@ -165,61 +163,166 @@ export type Structs<T extends Struct<any>[]> =
 /**
  * Type that combines types definitions of classes, structures and type aliases.
  */
-export type Model<TClasses extends Class<any>[] = [], TStructs extends Struct<any>[] = []> =
+export type Model<TClasses extends AClass[], TStructs extends AStruct[]> =
 {
     classes: Classes<TClasses>;
     structs: Structs<TStructs>;
 }
 
+/**
+ * Helper type with all template parameters set to `any`. This is needed for easier referencing
+ * in other type definitions.
+ */
+type AModel = Model<AClass[], AStruct[]>
 
 
-/** Extracts `classes` object's type from the `Model` type */
-export type ModelClasses<TModel extends Model> = TModel["classes"];
-
-/** Extracts type representing names of classes from the `Model` type */
-export type ModelClassName<TModel extends Model> = string & keyof ModelClasses<TModel>;
-
-/** Extracts type representing the class with the given name from the `Model` type */
-export type ModelClass<TModel extends Model, TName extends ModelClassName<TModel>> =
-    ModelClasses<TModel>[TName];
-
-/** Extracts type representing the property names of the class with the given name from the `Model` type */
-export type ModelClassPropName<TModel extends Model, TName extends ModelClassName<TModel>> =
-    string & keyof ModelClass<TModel,TName>;
-
-/** Extracts class name type from the given class type */
-export type NameOfClass<TClass> = TClass extends Class<infer TName> ? TName : never;
 
 /**
- * Extracts primary key type of the given Model class type. For cross-link classes, it is a
- * combination of primary keys of the linked classes.
+ * Represents `classes` object's type from the `Model` type
  */
-export type KeyOfClass<TClass> = TClass extends Class<any, infer TKey> ? TKey : never;
+export type ModelClasses<M extends AModel> = M["classes"];
+
+/**
+ * Represents the union of all class names from the `Model` type
+ */
+export type ModelClassName<M extends AModel> = string & keyof ModelClasses<M>;
+
+/**
+ * Representing the class with the given name from the `Model` type
+ */
+export type ModelClass<M extends AModel, CN extends ModelClassName<M>> =
+    ModelClasses<M>[CN];
+
+/**
+ * Represents the union of all property names of the class with the given name from the `Model`
+ * type.
+ */
+export type ModelClassPropName<M extends AModel, CN extends ModelClassName<M>> =
+    string & keyof ModelClass<M,CN>;
+
+/**
+ * Represents the type of property with the given name of the class with the given name from
+ * the given `Model` type.
+ */
+export type ModelClassProp<M extends AModel, CN extends ModelClassName<M>,
+        PN extends ModelClassPropName<M,CN>> =
+    ModelClass<M,CN>[PN];
+
+/** Extracts class name type from the given class type */
+export type NameOfClass<C extends AClass> = C extends Class<infer CN,any,any> ? CN : never;
+
+/**
+ * Extracts primary key type of the given Model class type.
+ */
+export type KeyOfClass<C extends AClass> = C extends Class<any, infer K, any> ? K : never;
 
 /**
  * Extracts primary key type of the given Model class type as a "deep" object, which goes down the
  * object links (if links are part of the key) until scalar values are found.
  */
-export type DeepKeyOfClass<TClass> = TClass extends Class<any, infer TKey>
-    ? { [P in keyof TKey]-?: TKey[P] extends Class<any>
-        ? KeyOfClass<TKey[P]>
-        : TKey[P] }
+export type DeepKeyOfClass<C extends AClass> = C extends Class<any, infer K, any>
+    ? { [P in keyof K]-?: K[P] extends AClass
+        ? DeepKeyOfClass<K[P]>
+        : K[P] }
     : never;
 
 
 
 /** Extracts `structs` object's type from the `Model` type */
-export type ModelStructs<TModel extends Model> = TModel["structs"];
+export type ModelStructs<M extends AModel> = M["structs"];
 
 /** Extracts type representing names of struct types from the `Model` type */
-export type ModelStructName<TModel extends Model> = keyof ModelStructs<TModel>;
+export type ModelStructName<M extends AModel> = keyof ModelStructs<M>;
 
 /** Extracts type representing the structure with the given name from the `Model` type */
-export type ModelStruct<TModel extends Model, TName extends ModelStructName<TModel>> =
-    ModelStructs<TModel>[TName];
+export type ModelStruct<M extends AModel, SN extends ModelStructName<M>> =
+    ModelStructs<M>[SN];
 
 /** Extracts class name type from the given class type */
-export type NameOfStruct<TStruct> = TStruct extends Struct<infer TName> ? TName : never;
+export type NameOfStruct<S> = S extends Struct<infer SN> ? SN : never;
+
+
+
+/**
+ * Represents property type of the given TypeScript type. If the property is of the Class type,
+ * then this returns the corresponding Entity type.
+ */
+export type EntityPropType<M extends AModel, T> =
+    T extends Class<infer CN, any, any>
+        ? CN extends ModelClassName<M> ? Entity<M,CN> : never
+        : T
+
+/**
+ * Represents properies derived from the class's primary key definition of the class with the
+ * given name from the given model.
+ */
+export type ModelClassKeyProps<M extends AModel, CN extends ModelClassName<M>> =
+    ModelClass<M,CN> extends Class<any, infer K, any>
+        ? K extends KeyType ? { [P in keyof K]?: EntityPropType<M,K[P]> } : {}
+        : {}
+
+/**
+ * Represents properies derived from the class's unique constraint definitions of the class with
+ * the given name from the given model.
+ */
+export type ModelClassUniqueProps<M extends AModel, CN extends ModelClassName<M>> =
+    ModelClass<M,CN> extends Class<any, any, infer U>
+        ? U extends KeyType[]
+            ? UnionToIntersection<{ [i in keyof U]:
+                {[P in keyof U[i]]?: EntityPropType<M,U[i][P]>}
+              }[number]>
+            : {}
+        : {}
+
+/**
+ * Represents properies derived from the class's own property definition of the class with the
+ * given name from the given model.
+ */
+export type ModelClassOwnProps<M extends AModel, CN extends ModelClassName<M>> =
+    ModelClass<M,CN> extends AClass
+        ? { [PN in ModelClassPropName<M,CN>]?: EntityPropType<M,ModelClassProp<M,CN,PN>> }
+        : {}
+
+/**
+ * Represents a simple object type with properties taken from the definition of a class with the
+ * given name from the given model. The properies are extracted from:
+ * - primary key definition
+ * - unique constraints definitions
+ * - own class properties
+ */
+export type Entity<M extends AModel, CN extends ModelClassName<M>> =
+    ModelClassKeyProps<M,CN> & ModelClassUniqueProps<M,CN> & ModelClassOwnProps<M,CN>
+
+
+
+/**
+ * Extracts primary key type of the entity corresponding to the class with the given name from the
+ * given model. This type only extracts the "first" level of primary key properties. That is, if
+ * the key property is a link, it will point to the full Entity object.
+ */
+export type EntityKey<M extends AModel, CN extends ModelClassName<M>> =
+    ModelClass<M,CN> extends Class<any, infer K, any>
+        ? { [P in string & keyof K]: K[P] extends Class<infer CN1,any,any>
+            ? CN1 extends ModelClassName<M> ? Entity<M,CN1> : never
+            : K[P] }
+        : never;
+
+/**
+ * Extracts primary key type of the given Model class type as a "deep" object, which goes down the
+ * object links (if links are part of the key) until scalar values are found.
+ */
+export type EntityDeepKey<M extends AModel, CN extends ModelClassName<M>> =
+    ModelClass<M,CN> extends Class<any, infer K, any>
+        ? { [P in string & keyof K]: K[P] extends Class<infer CN1,any,any>
+            ? CN1 extends ModelClassName<M> ? EntityDeepKey<M,CN1> : never
+            : K[P] }
+        : never;
+
+// export type EntityDeepKey<C extends AClass> = C extends Class<any, infer K, any>
+//     ? { [P in keyof K]-?: K[P] extends AClass
+//         ? DeepKeyOfClass<K[P]>
+//         : K[P] }
+//     : never;
 
 
 
