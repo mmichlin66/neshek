@@ -20,9 +20,9 @@ export type RepoError = {
 
 /**
  * Represents a generic response type returned by repository functions.
- * @typeParam TData type of returned data.
+ * @typeParam T Type of returned data.
  */
-export type RepoResponse<TData> = {
+export type RepoResponse<T> = {
     /**
      * Flag indicating whether the operation was successful. If true, the `data` property will
      * be present (although it can be null). If false, the `error` property will be present.
@@ -30,18 +30,18 @@ export type RepoResponse<TData> = {
     success: boolean;
 
     /** Response data - only present if the `success` property is true. */
-    data?: TData;
+    data?: T;
 
     /** Operation error - only present if the `success` property is false. */
     error?: RepoError;
 }
 
 /** Represent response from the repository `get` operation. */
-export type RepoGetResponse<TClass> = RepoResponse<TClass | null>
+export type RepoGetResponse<T> = RepoResponse<T | null>
 
 /** Represent response from the repository `query` operation. */
-export type RepoQueryResponse<TClass> = RepoResponse<{
-    elms: TClass[];
+export type RepoQueryResponse<T> = RepoResponse<{
+    elms: T[];
     cursor?: string;
 }>
 

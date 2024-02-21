@@ -32,6 +32,7 @@ export let mySchema: SchemaDef<MyModel> = {
                 // managerNotes: {dt: "obj", props: {manager: {dt: "str"}, note: {dt: "obj", name: "Note"}}}
             },
             key: ["order", "product"],
+            // key: ["product", "order"],
         },
         ExtraItemInfo: {
             props: {

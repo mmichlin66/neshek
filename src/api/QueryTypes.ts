@@ -40,7 +40,8 @@ import { StringKeys } from "./UtilTypes";
  * - Array or Multi Link: Query of the corresponding type, which may define filters and other
  *   parameters determining how the array elements or linked objects are returned.
  *
- * @typeParam T type whose retrieval options are specified. The type can be any allowed in the
+ * @typeParam M Model describing all available classes of objects
+ * @typeParam T Type whose retrieval options are specified. The type can be any allowed in the
  * `PropType` type, including scalars, structs, arrays and single and multi links.
  * @typeParam TAllowFilters flag determining whether to allow specifying filters for properties.
  * Filters are not allowed for top-level classes and only in the `get` operation (because the only
@@ -60,15 +61,30 @@ export type PropSet<M extends AModel, T, TAllowFilters extends boolean> =
         { fields?: StringKeys<T> | string } :
     never;
 
+
+
+/**
+ * Represents a general non-templated structure of a query for a collection of objects.
+ */
+export type AQuery =
+{
+    filters?: string;
+    sort?: string;
+    limit?: number;
+    props?: Record<string,any>;
+    cursor?: string;
+}
+
 /**
  * Represents a query for a collection of objects of the given type, which lists filters and
  * other parameters as well as properties that should be retrieved. The object might be either
  * a multi link to a class or an array of other objects.
  *
- * @typeParam T type whose retrieval options are specified. The type can be any allowed in the
+ * @typeParam M Model describing all available classes of objects
+ * @typeParam T Type whose retrieval options are specified. The type can be any allowed in the
  * `PropType` type, including scalars, structs, arrays and single and multi links.
  */
-export type Query<M extends AModel, T> =
+export type Query<M extends AModel, T> = AQuery &
 {
     filters?: string;
     sort?: string;

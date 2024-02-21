@@ -1,6 +1,7 @@
 import { AClassDef, APropDef, ASchemaDef, ALinkPropDef, StringPropDef, BoolPropDef, IntPropDef } from "./SchemaTypes";
 import { IDBAdapter } from "./DBTypes";
 import { ARdbSchemaHints, ARdbClassHints, ARdbLinkPropHints, RdbScalarPropHints } from "./RdbTypes";
+import { ScalarType } from "./ModelTypes";
 
 
 
@@ -96,11 +97,9 @@ export type RdbLinkField =
  * Represents an adapter that knows to work with a database implementation. Neshek Repository
  * object calls methods of this interface to read from and write to the database.
  */
-export class RdbAdapter implements IDBAdapter
+export abstract class RdbAdapter implements IDBAdapter
 {
-    private rdbSchema: RdbSchema;
-
-    private objects = new Map<string, Map<string, Record<string,any>> | undefined>();
+    protected rdbSchema: RdbSchema;
 
 
 
@@ -318,17 +317,73 @@ export class RdbAdapter implements IDBAdapter
      * @param key
      * @param props
      */
-    public get(className: string, key: Record<string,any>, props: string[]): Record<string,any> | null
+    public get(className: string, key: Record<string,any>, props: any): Record<string,any> | null
     {
-        let obj = this.objects[className]?.get(JSON.stringify(key));
+        // get the class object
+        let cls = this.rdbSchema[className];
+        if (!cls)
+            throw new Error("Class not found");
+
+        let keyFields = this.convertPropsToFields(cls, key);
+
+        let obj = this.getObject(cls, keyFields);
         if (!obj)
             return null;
 
-        let result: Record<string,any> = {};
-        for (let prop of props)
-            result[prop] = obj.prop;
+        // !!! Temp
+        return obj;
 
-        return result;
+        // let result: Record<string,any> = {};
+        // // for (let prop of props)
+        // //     result[prop] = obj.prop;
+
+        // return result;
+    }
+
+    protected abstract getObject(cls: RdbClass, keyFields: Record<string,ScalarType>): Record<string,any> | null;
+
+
+
+    /**
+     * Converts an object with entity properties and their values to an object mapping field names
+     * to the values.
+     */
+    private convertPropsToFields(cls: RdbClass, key: Record<string,any>): Record<string,ScalarType>
+    {
+        let fields: Record<string,ScalarType> = {}
+        for (let p in key)
+        {
+            let prop = cls.props[p];
+            if (!prop)
+                throw new Error("Property not found");
+            else if (!prop.field)
+                throw new Error("Multilink property cannot be part of a key");
+
+            if (typeof prop.field !== "object")
+                fields[prop.field] = key[p];
+            else
+            {
+                for (let field in prop.field)
+                {
+                    // follow chain of property names defined for the field to get to the value
+                    // in the key
+                    let propChain = prop.field[field].propChain;
+                    let curKeyPart = key;
+                    for (let propInChain of propChain)
+                    {
+                        if (propInChain in curKeyPart)
+                            curKeyPart = curKeyPart[propInChain]
+                        else
+                            throw new Error("Invalid part of a key");
+                    }
+
+                    // after the loop, curKeyPart points to the scalar value of the last property
+                    fields[field] = curKeyPart as ScalarType;
+                }
+            }
+        }
+
+        return fields;
     }
 }
 
