@@ -82,10 +82,10 @@ export type Class<CN extends string, K extends KeyType | undefined, U extends Ke
 }
 
 /**
- * Helper type with all template parameters set to `any`. This is needed for easier referencing
- * in other type definitions.
+ * Helper type with all template parameters set to default types. This is needed for easier
+ * referencing in other type definitions.
  */
-export type AClass = Class<any,any,any>
+export type AClass = Class<string, KeyType | undefined, KeyType[] | undefined>
 
 /**
  * Transforms array of Neshek class types into object type where keys are class names and
@@ -131,10 +131,10 @@ export type Struct<SN extends string> =
     }
 
 /**
- * Helper type with all template parameters set to `any`. This is needed for easier referencing
- * in other type definitions.
+ * Helper type with all template parameters set to default types. This is needed for easier
+ * referencing in other type definitions.
  */
-export type AStruct = Struct<any>
+export type AStruct = Struct<string>
 
 /**
  * Transforms array of Neshek struct types into object type where keys are struct names and
@@ -170,8 +170,8 @@ export type Model<TClasses extends AClass[], TStructs extends AStruct[]> =
 }
 
 /**
- * Helper type with all template parameters set to `any`. This is needed for easier referencing
- * in other type definitions.
+ * Helper type with all template parameters set to default types. This is needed for easier
+ * referencing in other type definitions.
  */
 export type AModel = Model<AClass[], AStruct[]>
 

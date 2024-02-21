@@ -1,9 +1,9 @@
-import { RDBSchemaHints } from "neshek"
+import { RdbSchemaHints } from "neshek"
 import { MyModel } from "./TestModel"
 
 
 
-export let myHints: RDBSchemaHints<MyModel> = {
+export let myHints: RdbSchemaHints<MyModel> = {
     classes: {
         Order : {
             tableName: "orders",

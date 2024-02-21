@@ -20,9 +20,12 @@ export interface IDBAdapter
     get(className: string, key: any, props: string[]): any;
 }
 
-let db = {} as IDBAdapter
-let obj = db.get("Product", {code: "123"}, ["code", "name", "msrp"]);
-let code = obj.code;
+function test(): void
+{
+    let db = {} as IDBAdapter
+    let obj = db.get("Product", {code: "123"}, ["code", "name", "msrp"]);
+    let code = obj.code;
+}
 
 
 

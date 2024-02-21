@@ -230,33 +230,33 @@ export type DateTimePropDef = CommonPropDef &
 // }
 
 /**
+ * Helper type with all template parameters set to `any`. This is needed for easier referencing
+ * in other type definitions.
+ */
+export type ALinkPropDef = CommonPropDef &
+{
+    dt: "link";
+    target: string;
+}
+
+/**
  * Contains attributes defining behavior of a single link property.
  * @typeParam PN class that is a target of the link.
  */
-export type LinkPropDef<M extends AModel, PN extends ModelClassName<M>> = CommonPropDef &
+export type LinkPropDef<M extends AModel, PN extends ModelClassName<M>> = ALinkPropDef &
 {
-    dt: "link";
     target: PN;
+}
 
-    // /**
-    //  * Property name(s) that keep the primary key of the target object. This is represented as
-    //  * an object whose keys are the property names of the target's primary key and the values
-    //  * are property names. The `keyProps` structure is recursive to support cases when a property
-    //  * of the target's primary key consists of more than one fields.
-    //  *
-    //  * **Example:**
-    //  * ```typescript
-    //  * // primary key with one field
-    //  * {id: "orderID"}
-    //  *
-    //  * // primary key with two fields
-    //  * {firstName: "personFirstName", lastName: "personLastName", dob: "personDOB"}
-    //  *
-    //  * // hierarchical primary key (e.g to a cross link)
-    //  * {order: {id: "orderID"}, product: {code: "productCode"}}
-    //  * ```
-    //  */
-    // keyProps: ForeignKeyFields<TKey>;
+/**
+ * Helper type with all template parameters set to `any`. This is needed for easier referencing
+ * in other type definitions.
+ */
+export type AMultiLinkPropDef = CommonPropDef &
+{
+    dt: "multilink";
+    origin: string;
+    originKey: string;
 }
 
 /**
@@ -265,9 +265,8 @@ export type LinkPropDef<M extends AModel, PN extends ModelClassName<M>> = Common
  * corresponding single link.
  *
  */
-export type MultiLinkPropDef<M extends AModel, C extends AClass> = CommonPropDef &
+export type MultiLinkPropDef<M extends AModel, C extends AClass> = AMultiLinkPropDef &
 {
-    dt: "multilink";
     origin: NameOfClass<C>;
     originKey: string & keyof Entity<M, NameOfClass<C>>;
 }
@@ -283,9 +282,18 @@ export type MultiLinkPropDef<M extends AModel, C extends AClass> = CommonPropDef
 //     never)
 
 /**
+ * Helper type with all template parameters set to `any`. This is needed for easier referencing
+ * in other type definitions.
+ */
+export type APropDef = StringPropDef | DatePropDef | TimePropDef | DateTimePropDef |
+    IntPropDef | BigIntPropDef | RealPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef |
+    BoolPropDef | ALinkPropDef | AMultiLinkPropDef;
+
+/**
  * Represents attributes defining behavior of a property of a given type.
  */
-export type PropDef<M extends AModel, T> =
+export type PropDef<M extends AModel, T> = APropDef &
+(
     T extends string ? StringPropDef | DatePropDef | TimePropDef | DateTimePropDef :
     T extends number ? IntPropDef | RealPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
     T extends bigint ? BigIntPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
@@ -297,12 +305,13 @@ export type PropDef<M extends AModel, T> =
         ? LinkPropDef<M,CN>
         : never :
     never
+);
 
 /**
  * Helper type with all template parameters set to `any`. This is needed for easier referencing
  * in other type definitions.
  */
-export type APropDef = PropDef<any,any>
+export type AStructDef = { [P: string]: APropDef }
 
 /**
  * Represents definition of a structured type, which defines property names and corresponding
@@ -310,7 +319,7 @@ export type APropDef = PropDef<any,any>
  * serve as a "base" for a class. In the latter case, the class will have all the proprties
  * that the structure defines.
  */
-export type StructDef<M extends AModel, SN extends ModelStructName<M>> =
+export type StructDef<M extends AModel, SN extends ModelStructName<M>> = AStructDef &
 {
     [P in string & keyof ModelStruct<M,SN>]-?: PropDef<M, ModelStruct<M,SN>[P]>
 }
@@ -318,7 +327,32 @@ export type StructDef<M extends AModel, SN extends ModelStructName<M>> =
 /**
  * Represents definition of a class.
  */
-export type ClassDef<M extends AModel, CN extends ModelClassName<M>> =
+export type AClassDef =
+{
+    base?: string | string[];
+
+    /**
+     * Defenitions of class properties
+     */
+    props: { [P: string]: APropDef };
+
+    /**
+     * Defines what fields constitute a primary key for the class. The key can be a single field
+     * or a collection of fields.
+     */
+    key?: string[];
+
+    /**
+     * If the class is declared abstract, no instances of it can be created in the repository.
+     * It can only be used as a base for other classes.
+     */
+    abstract?: boolean;
+}
+
+/**
+ * Represents definition of a class with proper template parameters.
+ */
+export type ClassDef<M extends AModel, CN extends ModelClassName<M>> = AClassDef &
 {
     /**
      * Defines one or more base classes or structures.
@@ -335,34 +369,25 @@ export type ClassDef<M extends AModel, CN extends ModelClassName<M>> =
      * or a collection of fields.
      */
     key?: KeysToTuple<EntityKey<M,CN>>;
-
-    /**
-     * If the class is declared abstract, no instances of it can be created in the repository.
-     * It can only be used as a base for other classes.
-     */
-    abstract?: boolean;
 }
-
-/**
- * Helper type with all template parameters set to `any`. This is needed for easier referencing
- * in other type definitions.
- */
-export type AClassDef = ClassDef<any,any>
 
 /**
  * Represents a Schema, which combines definitions of classes, structures and type aliases.
  */
-export type SchemaDef<M extends AModel> =
+export type ASchemaDef =
+{
+    classes: { [CN: string]: AClassDef }
+    structs: { [SN: string]: AStructDef}
+}
+
+/**
+ * Represents a Schema, which combines definitions of classes, structures and type aliases.
+ */
+export type SchemaDef<M extends AModel> = ASchemaDef &
 {
     classes: { [CN in ModelClassName<M>]: ClassDef<M, CN> }
     structs: { [SN in ModelStructName<M>]: StructDef<M, SN>}
 }
-
-/**
- * Helper type with all template parameters set to `any`. This is needed for easier referencing
- * in other type definitions.
- */
-export type ASchemaDef = SchemaDef<any>
 
 
 

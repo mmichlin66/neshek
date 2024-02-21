@@ -6,9 +6,9 @@ export * from "./api/SchemaTypes";
 export * from "./api/QueryTypes";
 export * from "./api/RepoTypes";
 export * from "./api/DBTypes";
-export * from "./api/RDBTypes";
+export * from "./api/RdbTypes";
 
-export * from "./api/RDBAdapter";
+export * from "./api/RdbAdapter";
 
 
 
