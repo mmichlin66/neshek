@@ -1,7 +1,7 @@
 import {
-    Class, KeyOfClass, Model, ModelClass, ModelClassName, MultiLink, ScalarType, StructType
+    AClass, AModel, Class, Entity, EntityKey, EntityPropName, KeyOfClass, KeyType, ModelClass, ModelClassName, ModelClassProp, ModelClassPropName, MultiLink, ScalarType
 } from "./ModelTypes";
-import { ClassDef, PropDef } from "./SchemaTypes";
+import { AClassDef, APropDef } from "./SchemaTypes";
 
 
 
@@ -10,7 +10,7 @@ import { ClassDef, PropDef } from "./SchemaTypes";
  * This allows providing table names for classes, field names for linked objects' primary keys
  * and other parameters.
  */
-export type RDBSchemaHints<TModel extends Model = any> =
+export type RDBSchemaHints<M extends AModel> =
 {
     /**
      * Default function that generates a table name for the given class name. This function is
@@ -32,18 +32,17 @@ export type RDBSchemaHints<TModel extends Model = any> =
      * @param propDef Property definition
      * @returns Field type string
      */
-    fieldTypeFunc?: (propDef: PropDef) => string;
+    fieldTypeFunc?: (propDef: APropDef) => string;
 
     /** Hints for individual classes */
-    classes?: { [TName in ModelClassName<TModel>]:
-        RDBClassHints<TModel, ModelClass<TModel, TName> extends Class<TName> ? ModelClass<TModel, TName> : never>}
+    classes?: { [CN in ModelClassName<M>]: RDBClassHints<M,CN>}
 }
 
 /**
  * Represents information on how the class structure from the model should be applied to a
  * relational data base.
  */
-export type RDBClassHints<TModel extends Model = any, TClass extends Class<string> = any> =
+export type RDBClassHints<M extends AModel, CN extends ModelClassName<M>> =
 {
     /**
      * Name of the table to keep class instances. If this property is undefined, the table name
@@ -53,7 +52,7 @@ export type RDBClassHints<TModel extends Model = any, TClass extends Class<strin
     tableName?: string;
 
     /** Hints for individual properties */
-    props?: { [TPropName in string & keyof TClass]?: RDBPropHints<TModel, TClass[TPropName]> }
+    props?: { [PN in EntityPropName<M,CN>]?: RDBPropHints<M, Entity<M,CN>[PN]> }
 }
 
 // PropDef<TModel, ModelClass<TModel, TClassName>[TPropName]>
@@ -62,14 +61,15 @@ export type RDBClassHints<TModel extends Model = any, TClass extends Class<strin
  * Represents information on how the property structure from the model should be applied to a
  * relational data base.
  */
-export type RDBPropHints<TModel extends Model = any, T = any> =
+export type RDBPropHints<M extends AModel, T> =
     T extends ScalarType ? RDBScalarPropHints :
-    T extends Array<infer TElm> ? RDBScalarPropHints :
-    T extends MultiLink<infer TClass> ? never :
-    T extends Class<infer TName> ? TName extends keyof TModel["classes"]
-        ? RDBLinkPropHints<KeyOfClass<T>>
-        : T extends StructType ? RDBScalarPropHints : never :
-    T extends StructType ? RDBScalarPropHints :
+    // T extends Array<infer E> ? RDBScalarPropHints :
+    T extends MultiLink<any> ? never :
+    T extends Entity<M, infer CN> ? CN extends ModelClassName<M>
+        ? RDBLinkPropHints<EntityKey<M,CN>>
+        : never :
+    //     : T extends StructType ? RDBScalarPropHints : never :
+    // T extends StructType ? RDBScalarPropHints :
     never
 
 /**
@@ -96,12 +96,19 @@ export type RDBScalarPropHints = RDBCommonPropHints
  * actual foreign key may consists of multiple fields. For each of these fields we need to provide
  * field name and type.
  */
-export type RDBLinkPropHints<TKey extends object = object> =
+// export type RDBLinkPropHints<M extends AModel, CN extends ModelClassName<M>> =
+// {
+//     [P in string & keyof EntityKey<M,CN>]: EntityKey<M,CN>[P] extends object
+//             ? CN1 extends ModelClassName<M> ? RDBLinkPropHints<M,CN1> : never
+//             : RDBScalarPropHints
+// }
+
+export type RDBLinkPropHints<K extends KeyType> =
 {
-    [P in string & keyof TKey]:
-        // TKey[P] extends ScalarType ? RDBScalarPropHints :
-        TKey[P] extends Class<any, infer TNestedKey> ? RDBLinkPropHints<TNestedKey> :
-        RDBScalarPropHints
+    [P in string & keyof K]:
+        K[P] extends ScalarType ? RDBScalarPropHints :
+        K[P] extends KeyType ? RDBLinkPropHints<K[P]> :
+        never
 }
 
 
@@ -120,7 +127,7 @@ export type RDBClass =
     name: string;
 
     /** Class definition */
-    classDef: ClassDef;
+    classDef: AClassDef;
 
     /** Table name */
     table: string;
@@ -154,7 +161,7 @@ export type RDBProp =
     name: string;
 
     /** Property definition from the schema definition */
-    propDef: PropDef;
+    propDef: APropDef;
 
     /**
      * If the property is a scalar, then this is field name. If the property is a link, then this

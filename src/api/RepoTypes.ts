@@ -1,4 +1,4 @@
-import { Model, ModelClassName, ModelClass, DeepKeyOfClass } from "./ModelTypes"
+import { ModelClassName, AModel, EntityKey, Entity } from "./ModelTypes"
 import { PropSet, Query } from "./QueryTypes";
 
 
@@ -66,9 +66,9 @@ export type RepoSessionOptions =
  * Represents an adapter that known to work with a database implementation. Neshek Repository
  * object calls methods of this interface to read from and write to the database.
  */
-export interface IRepository<TModel extends Model>
+export interface IRepository<M extends AModel>
 {
-    createSession(options?: RepoSessionOptions): IRepoSession<TModel>;
+    createSession(options?: RepoSessionOptions): IRepoSession<M>;
 }
 
 
@@ -76,7 +76,7 @@ export interface IRepository<TModel extends Model>
 /**
  * Represents operations that can be performed by a repository.
  */
-export interface IRepoSession<TModel extends Model>
+export interface IRepoSession<M extends AModel>
 {
     /**
      * Retrieves a single object by the given key
@@ -84,19 +84,19 @@ export interface IRepoSession<TModel extends Model>
      * @param key
      * @param props
      */
-    get<TName extends ModelClassName<TModel>>(
-        className: TName,
-        key: DeepKeyOfClass<ModelClass<TModel,TName>>,
-        props?: PropSet<ModelClass<TModel,TName>, false>
-    ): Promise<RepoGetResponse<ModelClass<TModel,TName>>>;
+    get<CN extends ModelClassName<M>>(
+        className: CN,
+        key: EntityKey<M,CN>,
+        props?: PropSet<M, Entity<M,CN>, false>
+    ): Promise<RepoGetResponse<Entity<M,CN>>>;
 
     /**
      * Retrieves multiple objects by the given criteria.
      * @param className
      * @param query
      */
-    query<TName extends ModelClassName<TModel>>(
-        className: TName,
-        query?: Query<ModelClass<TModel,TName>>
-    ): Promise<RepoQueryResponse<ModelClass<TModel,TName>>>;
+    query<CN extends ModelClassName<M>>(
+        className: CN,
+        query?: Query<M, Entity<M,CN>>
+    ): Promise<RepoQueryResponse<Entity<M,CN>>>;
 }

@@ -1,4 +1,8 @@
 import {
+    AClassDef,
+    AModel,
+    APropDef,
+    ASchemaDef,
     BoolPropDef,
     ClassDef, IDBAdapter, IntPropDef, LinkPropDef, Model, PropDef, RDBClass, RDBClassHints, RDBLinkField,
     RDBLinkFields, RDBLinkPropHints, RDBProp, RDBScalarPropHints, RDBSchema, RDBSchemaHints, SchemaDef, StringPropDef
@@ -10,7 +14,7 @@ import {
  * Represents an adapter that knows to work with a database implementation. Neshek Repository
  * object calls methods of this interface to read from and write to the database.
  */
-export class RDBAdapter<TModel extends Model> implements IDBAdapter
+export class RDBAdapter implements IDBAdapter
 {
     private rdbSchema: RDBSchema;
 
@@ -18,7 +22,7 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
 
 
 
-    constructor(schema: SchemaDef<TModel>, schemaHints?: RDBSchemaHints<TModel>)
+    constructor(schema: ASchemaDef, schemaHints?: RDBSchemaHints<any>)
     {
         this.rdbSchema = this.processSchema(schema, schemaHints);
     }
@@ -26,7 +30,7 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
 
 
     /** Processes schema definition and optional hints and creates RDBSchema object */
-    private processSchema(schema: SchemaDef<Model>, schemaHints: RDBSchemaHints<TModel> | undefined): RDBSchema
+    private processSchema(schema: ASchemaDef, schemaHints: RDBSchemaHints<any> | undefined): RDBSchema
     {
         let rdbSchema: RDBSchema = {};
 
@@ -51,7 +55,7 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
     }
 
     /** Creates RDBClass object and its properties except for the link properties */
-    private createClass(schema: SchemaDef, schemaHints: RDBSchemaHints | undefined,
+    private createClass(schema: ASchemaDef, schemaHints: RDBSchemaHints<any> | undefined,
         className: string): RDBClass
     {
         let classDef = schema.classes[className];
@@ -70,10 +74,10 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
         return rdbClass;
     }
 
-    private createProp(schema: SchemaDef, schemaHints: RDBSchemaHints | undefined,
-        classDef: ClassDef, classHints: RDBClassHints | undefined, propName: string): RDBProp
+    private createProp(schema: ASchemaDef, schemaHints: RDBSchemaHints<any> | undefined,
+        classDef: AClassDef, classHints: RDBClassHints<any,any> | undefined, propName: string): RDBProp
     {
-        let propDef = classDef.props[propName] as PropDef;
+        let propDef = classDef.props[propName] as APropDef;
         let propHints = classHints?.props?.[propName];
 
         // determine field name and type based on property's data type and property hints.
@@ -103,7 +107,7 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
 
     /** Part of the second pass over schema where we create links to other classes */
     private processLinkProp(rdbSchema: RDBSchema, schemaHints: RDBSchemaHints<any> | undefined,
-        rdbClass: RDBClass, classHints: RDBClassHints | undefined,
+        rdbClass: RDBClass, classHints: RDBClassHints<any,any> | undefined,
         rdbProp: RDBProp): void
     {
         let rdbLinkFields = {};
@@ -120,13 +124,13 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
      */
     private fillLinkFields(rdbLinkFields: RDBLinkFields, leadingChain: string[],
         rdbSchema: RDBSchema, schemaHints: RDBSchemaHints<any> | undefined,
-        rdbProp: RDBProp, propHints: RDBLinkPropHints | RDBScalarPropHints | undefined): void
+        rdbProp: RDBProp, propHints: RDBLinkPropHints<any> | RDBScalarPropHints | undefined): void
     {
         // get the key of the target class
-        let targetClassName = (rdbProp.propDef as LinkPropDef).target;
+        let targetClassName = (rdbProp.propDef as LinkPropDef<any,string>).target;
         let targetRdbClass = rdbSchema[targetClassName];
         let targetClassDef = targetRdbClass.classDef;
-        let targetKey = targetClassDef.key;
+        let targetKey = targetClassDef.key as string[];
 
         // we cannot have links to classes without primary key
         if (!targetKey)
@@ -139,7 +143,7 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
             newChain.push(keyPropName);
 
             // get property definition and check the data type
-            let keyPropDef = targetClassDef.props[keyPropName];
+            let keyPropDef = targetClassDef.props[keyPropName] as APropDef;
             let keyRdbProp = targetRdbClass.props[keyPropName];
             let keyPropHints = propHints?.[keyPropName];
             if (keyPropDef.dt !== "link")
@@ -152,7 +156,6 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
             }
             else
             {
-                let targetClassHints =  schemaHints?.classes?.[targetClassName];
                 this.fillLinkFields(rdbLinkFields, newChain, rdbSchema, schemaHints,
                     keyRdbProp, keyPropHints);
             }
@@ -166,7 +169,7 @@ export class RDBAdapter<TModel extends Model> implements IDBAdapter
      * @param propDef Object describing the property
      * @returns SQL type name
      */
-    protected getFieldType(propDef: PropDef): string
+    protected getFieldType(propDef: APropDef): string
     {
         switch (propDef.dt)
         {

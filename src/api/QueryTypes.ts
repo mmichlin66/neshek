@@ -1,4 +1,4 @@
-import { StructType, ScalarType, MultiLink } from "./ModelTypes"
+import { ScalarType, MultiLink, AModel, NameOfClass, Entity, EntityPropName } from "./ModelTypes"
 import { StringKeys } from "./UtilTypes";
 
 
@@ -43,20 +43,20 @@ import { StringKeys } from "./UtilTypes";
  * @typeParam T type whose retrieval options are specified. The type can be any allowed in the
  * `PropType` type, including scalars, structs, arrays and single and multi links.
  * @typeParam TAllowFilters flag determining whether to allow specifying filters for properties.
- * Filters are not allowedfor top-level classes  only in the `get` operation (because the only
+ * Filters are not allowed for top-level classes and only in the `get` operation (because the only
  * "filter" is either primary key or unique constraint). For the `query` operation, as well as
  * for multi-links on any level, filters are always allowed.
  */
-export type PropSet<T, TAllowFilters extends boolean> =
+export type PropSet<M extends AModel, T, TAllowFilters extends boolean> =
     T extends ScalarType | undefined ?
         TAllowFilters extends true ? T | undefined : undefined :
-    T extends Array<infer TElm> | undefined ?
-        undefined | StringKeys<TElm> | Query<TElm> | string :
-    T extends MultiLink<infer TClass> | undefined ?
-        undefined | StringKeys<TClass> | Query<TClass> | string :
-    T extends StructType | undefined ?
+    // T extends Array<infer E> | undefined ?
+    //     undefined | StringKeys<E> | Query<M,E> | string :
+    T extends MultiLink<infer C> | undefined ?
+        undefined | EntityPropName<M, NameOfClass<C>> | Query<M, Entity<M, NameOfClass<C>>> | string :
+    T extends object | undefined ?
         undefined | StringKeys<T> |
-        { [P in keyof T & string]?: PropSet<T[P], TAllowFilters> } &
+        { [P in keyof T & string]?: PropSet<M, T[P], TAllowFilters> } &
         { fields?: StringKeys<T> | string } :
     never;
 
@@ -68,12 +68,12 @@ export type PropSet<T, TAllowFilters extends boolean> =
  * @typeParam T type whose retrieval options are specified. The type can be any allowed in the
  * `PropType` type, including scalars, structs, arrays and single and multi links.
  */
-export type Query<T> =
+export type Query<M extends AModel, T> =
 {
     filters?: string;
     sort?: string;
     limit?: number;
-    props?: PropSet<T, true>;
+    props?: PropSet<M, T, true>;
     cursor?: string;
 }
 

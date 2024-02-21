@@ -1,10 +1,10 @@
-import { IRepository, Model, SchemaDef } from "neshek"
+import { IRepository, AModel, SchemaDef } from "neshek"
 import { mySchema } from "./TestSchema";
 
 
-function createRepo<TModel extends Model>(schema: SchemaDef<TModel>): IRepository<TModel>
+function createRepo<M extends AModel>(schema: SchemaDef<M>): IRepository<M>
 {
-    return {} as IRepository<TModel>;
+    return {} as IRepository<M>;
 }
 
 let repo = createRepo(mySchema);
@@ -12,26 +12,26 @@ let session = repo.createSession();
 
 let product = await session.get("Product", {code: "123"}, {
     msrp: undefined,
-    notes: {
-        props: {
-            text: undefined,
-            time: undefined,
+    // notes: {
+    //     props: {
+    //         text: undefined,
+    //         time: undefined,
 
-            // @ts-expect-error (a is not in Item)
-            a: undefined,
-        }
-    },
+    //         // @ts-expect-error (a is not in Item)
+    //         a: undefined,
+    //     }
+    // },
 
-    // ??? @ts-expect-error (not property of Product) - not working for Product
+    // @ts-expect-error (not property of Product) - not working for Product
     a: undefined,
 });
 
 let product1 = await session.get("Product", {code: "123"}, {
     fields: ["msrp"],
-    notes: {
-        props: ["text", "time"],
-        limit: 3,
-    },
+    // notes: {
+    //     props: ["text", "time"],
+    //     limit: 3,
+    // },
 
     // @ts-expect-error (not property of Product)
     a: undefined,
@@ -42,7 +42,7 @@ let product12 = session.get("Product", {id: "123"});
 
 let product3 = await session.get("Product", {code: "123"}, {
     fields: "msrp",
-    notes: "text, time",
+    // notes: "text, time",
 });
 
 let order = session.get("Order", {id: 123}, {

@@ -1,8 +1,8 @@
 import {
-    PropType, MultiLink, Model, ModelClassName, KeyOfClass, ModelClass, ModelStructName,
-    ModelStruct, StructType, NameOfClass, Class, Struct
+    PropType, MultiLink, ModelClassName, ModelStructName, ModelStruct, NameOfClass, Class,
+    AModel, AClass, EntityKey, Entity, EntityPropName
 } from "./ModelTypes";
-import { KeysToTuple, XOR } from "./UtilTypes";
+import { KeysToTuple } from "./UtilTypes";
 
 /**
  * Represents underlying data types corresponding to property types:
@@ -46,18 +46,16 @@ export type DataType =
 /**
  * Represents underlying data type corresponding to the given property type
  */
-export type DataTypeOfPropType<TModel extends Model, T extends PropType> =
+export type DataTypeOfPropType<M extends AModel, T extends PropType> =
     T extends string ? "str" | "date" | "time" | "datetime" :
     T extends number ? "int" | "real" | "dec" | "bit" | "ts" :
     T extends bigint ? "bigint" | "dec" | "bit" | "ts" :
     T extends boolean ? "bool" :
     T extends Date ? "timestamp" :
-    T extends Array<any> ? "arr" :
-    T extends MultiLink ? "multilink" :
-    T extends Class<infer TName> ? TName extends keyof TModel["classes"]
+    T extends MultiLink<AClass> ? "multilink" :
+    T extends Class<infer CN,any,any> ? CN extends ModelClassName<M>
         ? "link"
-        : T extends StructType ? "obj" : never :
-    T extends StructType ? "obj" :
+        : never :
     never
 
 // type C = Class<"C"> & {a?: string};
@@ -70,15 +68,15 @@ export type DataTypeOfPropType<TModel extends Model, T extends PropType> =
 
 
 
-/**
- * Transforms the given primary key object to an object with the same properties and string values.
- * This type is needed for single links to specify field names in the table with the foreign key.
- * For example, if the primary key of the Order object is {id: number}, the corresponding field
- * in the table with the foreign key might be named "order_id".
- */
-export type ForeignKeyFields<TKey extends object> =
-    { [P in keyof TKey & string]: TKey[P] extends Class<any, infer TNestedKey>
-        ? ForeignKeyFields<TNestedKey> : string }
+// /**
+//  * Transforms the given primary key object to an object with the same properties and string values.
+//  * This type is needed for single links to specify field names in the table with the foreign key.
+//  * For example, if the primary key of the Order object is {id: number}, the corresponding field
+//  * in the table with the foreign key might be named "order_id".
+//  */
+// export type ForeignKeyFields<K extends object> =
+//     { [P in keyof K & string]: K[P] extends Class<any, infer TNestedKey>
+//         ? ForeignKeyFields<TNestedKey> : string }
 
 
 
@@ -93,16 +91,16 @@ export type CommonPropDef =
     dt: DataType,
 
     /**
-     * Determines whether the field value must be unique across all objects of its class.
-     * Default value: false.
-     */
-    unique?: boolean;
-
-    /**
      * Determines whether the field must have a non-null value in the repository.
      * Default value: false.
      */
     required?: boolean;
+
+    /**
+     * Determines whether the field value must be unique across all objects of its class.
+     * Default value: false.
+     */
+    unique?: boolean;
 }
 
 /**
@@ -222,23 +220,23 @@ export type DateTimePropDef = CommonPropDef &
     precision?: number;
 }
 
-/**
- * Contains attributes defining behavior of a structure property
- */
-export type ArrayPropDef<TModel extends Model, TElm> = CommonPropDef &
-{
-    dt: "arr";
-    elm: PropDef<TModel, TElm>;
-}
+// /**
+//  * Contains attributes defining behavior of a structure property
+//  */
+// export type ArrayPropDef<M extends AModel, E> = CommonPropDef &
+// {
+//     dt: "arr";
+//     elm: PropDef<M, E>;
+// }
 
 /**
  * Contains attributes defining behavior of a single link property.
- * @typeParam TClass class that is a target of the link.
+ * @typeParam PN class that is a target of the link.
  */
-export type LinkPropDef<TName extends string = string> = CommonPropDef &
+export type LinkPropDef<M extends AModel, PN extends ModelClassName<M>> = CommonPropDef &
 {
     dt: "link";
-    target: TName;
+    target: PN;
 
     // /**
     //  * Property name(s) that keep the primary key of the target object. This is represented as
@@ -267,39 +265,44 @@ export type LinkPropDef<TName extends string = string> = CommonPropDef &
  * corresponding single link.
  *
  */
-export type MultiLinkPropDef<TClass> = CommonPropDef &
+export type MultiLinkPropDef<M extends AModel, C extends AClass> = CommonPropDef &
 {
     dt: "multilink";
-    origin: NameOfClass<TClass>;
-    originKey: string & keyof TClass;
+    origin: NameOfClass<C>;
+    originKey: string & keyof Entity<M, NameOfClass<C>>;
 }
 
-/**
- * Contains attributes defining behavior of a structure property
- */
-export type StructPropDef<TModel extends Model, T> = CommonPropDef & {dt: "obj"} & (
-    T extends Struct<infer TName> ? TName extends keyof TModel["structs"]
-        ? {name: TName}
-        : T extends StructType ? {props: StructDef<TModel, T>} : never :
-    T extends StructType ? {props: StructDef<TModel, T>} :
-    never)
+// /**
+//  * Contains attributes defining behavior of a structure property
+//  */
+// export type StructPropDef<M extends AModel, T> = CommonPropDef & {dt: "obj"} & (
+//     T extends Struct<infer TName> ? TName extends keyof M["structs"]
+//         ? {name: TName}
+//         : T extends StructType ? {props: StructDef<M, T>} : never :
+//     T extends StructType ? {props: StructDef<M, T>} :
+//     never)
 
 /**
  * Represents attributes defining behavior of a property of a given type.
  */
-export type PropDef<TModel extends Model = any, T = any> =
+export type PropDef<M extends AModel, T> =
     T extends string ? StringPropDef | DatePropDef | TimePropDef | DateTimePropDef :
     T extends number ? IntPropDef | RealPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
     T extends bigint ? BigIntPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
     T extends boolean ? BoolPropDef :
     T extends Date ? TimestampPropDef :
-    T extends Array<infer TElm> ? ArrayPropDef<TModel, TElm> :
-    T extends MultiLink<infer TClass> ? MultiLinkPropDef<TClass> :
-    T extends Class<infer TName> ? TName extends keyof TModel["classes"]
-        ? LinkPropDef<TName>
-        : T extends StructType ? StructPropDef<TModel, T> : never :
-    T extends StructType ? StructPropDef<TModel, T> :
+    // T extends Array<infer E> ? ArrayPropDef<M,E> :
+    T extends MultiLink<infer C> ? MultiLinkPropDef<M,C> :
+    T extends Entity<M, infer CN> ? CN extends ModelClassName<M>
+        ? LinkPropDef<M,CN>
+        : never :
     never
+
+/**
+ * Helper type with all template parameters set to `any`. This is needed for easier referencing
+ * in other type definitions.
+ */
+export type APropDef = PropDef<any,any>
 
 /**
  * Represents definition of a structured type, which defines property names and corresponding
@@ -307,31 +310,31 @@ export type PropDef<TModel extends Model = any, T = any> =
  * serve as a "base" for a class. In the latter case, the class will have all the proprties
  * that the structure defines.
  */
-export type StructDef<TModel extends Model, TStruct extends StructType> =
+export type StructDef<M extends AModel, SN extends ModelStructName<M>> =
 {
-    [P in keyof TStruct & string]-?: PropDef<TModel, TStruct[P]>
+    [P in string & keyof ModelStruct<M,SN>]-?: PropDef<M, ModelStruct<M,SN>[P]>
 }
 
 /**
  * Represents definition of a class.
  */
-export type ClassDef<TModel extends Model = any, TClass extends Class<string> = any> =
+export type ClassDef<M extends AModel, CN extends ModelClassName<M>> =
 {
     /**
      * Defines one or more base classes or structures.
      */
-    base?: string | string[];
+    base?: ModelClassName<M> | ModelClassName<M>[];
 
     /**
      * Defenitions of class properties
      */
-    props: StructDef<TModel, TClass>;
+    props: { [P in EntityPropName<M,CN>]-?: PropDef<M, Entity<M,CN>[P]> };
 
     /**
      * Defines what fields constitute a primary key for the class. The key can be a single field
      * or a collection of fields.
      */
-    key?: KeysToTuple<KeyOfClass<TClass>>;
+    key?: KeysToTuple<EntityKey<M,CN>>;
 
     /**
      * If the class is declared abstract, no instances of it can be created in the repository.
@@ -341,15 +344,25 @@ export type ClassDef<TModel extends Model = any, TClass extends Class<string> = 
 }
 
 /**
+ * Helper type with all template parameters set to `any`. This is needed for easier referencing
+ * in other type definitions.
+ */
+export type AClassDef = ClassDef<any,any>
+
+/**
  * Represents a Schema, which combines definitions of classes, structures and type aliases.
  */
-export type SchemaDef<TModel extends Model = any> =
+export type SchemaDef<M extends AModel> =
 {
-    classes: { [TName in ModelClassName<TModel>]:
-        ClassDef<TModel, ModelClass<TModel,TName> extends StructType ? ModelClass<TModel,TName> : never>}
-    structs: { [TName in ModelStructName<TModel>]:
-        StructDef<TModel, ModelStruct<TModel,TName> extends StructType ? ModelStruct<TModel,TName> : never>}
+    classes: { [CN in ModelClassName<M>]: ClassDef<M, CN> }
+    structs: { [SN in ModelStructName<M>]: StructDef<M, SN>}
 }
+
+/**
+ * Helper type with all template parameters set to `any`. This is needed for easier referencing
+ * in other type definitions.
+ */
+export type ASchemaDef = SchemaDef<any>
 
 
 

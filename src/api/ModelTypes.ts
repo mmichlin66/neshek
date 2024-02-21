@@ -26,7 +26,7 @@ export type KeyType = { [P: string]: KeyPropType }
  * - Array of any types
  * - Structure containing fields of any types
  */
-export type PropType = KeyPropType | MultiLink<AClass>;
+export type PropType = ScalarType | AClass | MultiLink<AClass>;
 // export type PropType = KeyPropType | Array<PropType> | MultiLink<AClass> | StructType;
 
 // /**
@@ -173,7 +173,7 @@ export type Model<TClasses extends AClass[], TStructs extends AStruct[]> =
  * Helper type with all template parameters set to `any`. This is needed for easier referencing
  * in other type definitions.
  */
-type AModel = Model<AClass[], AStruct[]>
+export type AModel = Model<AClass[], AStruct[]>
 
 
 
@@ -215,16 +215,6 @@ export type NameOfClass<C extends AClass> = C extends Class<infer CN,any,any> ? 
  * Extracts primary key type of the given Model class type.
  */
 export type KeyOfClass<C extends AClass> = C extends Class<any, infer K, any> ? K : never;
-
-/**
- * Extracts primary key type of the given Model class type as a "deep" object, which goes down the
- * object links (if links are part of the key) until scalar values are found.
- */
-export type DeepKeyOfClass<C extends AClass> = C extends Class<any, infer K, any>
-    ? { [P in keyof K]-?: K[P] extends AClass
-        ? DeepKeyOfClass<K[P]>
-        : K[P] }
-    : never;
 
 
 
@@ -293,36 +283,21 @@ export type ModelClassOwnProps<M extends AModel, CN extends ModelClassName<M>> =
 export type Entity<M extends AModel, CN extends ModelClassName<M>> =
     ModelClassKeyProps<M,CN> & ModelClassUniqueProps<M,CN> & ModelClassOwnProps<M,CN>
 
-
-
 /**
- * Extracts primary key type of the entity corresponding to the class with the given name from the
- * given model. This type only extracts the "first" level of primary key properties. That is, if
- * the key property is a link, it will point to the full Entity object.
+ * Represents a union of all properties for the entity corresponding to the class with the given
+ * name from the given model.
  */
-export type EntityKey<M extends AModel, CN extends ModelClassName<M>> =
-    ModelClass<M,CN> extends Class<any, infer K, any>
-        ? { [P in string & keyof K]: K[P] extends Class<infer CN1,any,any>
-            ? CN1 extends ModelClassName<M> ? Entity<M,CN1> : never
-            : K[P] }
-        : never;
+export type EntityPropName<M extends AModel, CN extends ModelClassName<M>> =
+    string & keyof Entity<M,CN>
 
 /**
  * Extracts primary key type of the given Model class type as a "deep" object, which goes down the
  * object links (if links are part of the key) until scalar values are found.
  */
-export type EntityDeepKey<M extends AModel, CN extends ModelClassName<M>> =
+export type EntityKey<M extends AModel, CN extends ModelClassName<M>> =
     ModelClass<M,CN> extends Class<any, infer K, any>
         ? { [P in string & keyof K]: K[P] extends Class<infer CN1,any,any>
-            ? CN1 extends ModelClassName<M> ? EntityDeepKey<M,CN1> : never
+            ? CN1 extends ModelClassName<M> ? EntityKey<M,CN1> : never
             : K[P] }
         : never;
-
-// export type EntityDeepKey<C extends AClass> = C extends Class<any, infer K, any>
-//     ? { [P in keyof K]-?: K[P] extends AClass
-//         ? DeepKeyOfClass<K[P]>
-//         : K[P] }
-//     : never;
-
-
 

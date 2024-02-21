@@ -1,6 +1,6 @@
 import {
-    ModelClass, ModelClassName, ModelClasses, Model, Class, KeyOfClass, MultiLink, NameOfClass,
-    ModelStructName, ModelStructs, Struct, XOR, Entity, EntityKey, EntityDeepKey
+    ModelClassName, ModelClasses, Model, Class, MultiLink, NameOfClass,
+    Struct, XOR, Entity, EntityKey
 } from "neshek";
 
 
@@ -56,15 +56,15 @@ function test(): void
     let productKey:  EntityKey<MyModel, "Product"> = {code: "123"};
     let item: Entity<MyModel, "Item"> = {order: {id: 123}, product: {code: "123"}, price: 30.99};
     let itemName: NameOfClass<ItemClass> = "Item";
-    let itemKey:  EntityKey<MyModel, "Item"> = {order: {id: 123}, product: {code: "123", msrp: 19.95}};
+    let itemKey:  EntityKey<MyModel, "Item"> = {order: {id: 123}, product: {code: "123"}};
     let extraItemInfo: Entity<MyModel, "ExtraItemInfo"> =
         {comments: "comments", item: {order: {id: 123}, product: {code: "123"}}};
     let extraItemInfoName: NameOfClass<ExtraItemInfoClass> = "ExtraItemInfo";
     let extraItemInfoKey:  EntityKey<MyModel, "ExtraItemInfo"> = {item: {order: {id: 123}, product: {code: "123"}}};
 
     // @ts-expect-error (should complain on `msrp` property)
-    let itemDeepKey:  EntityDeepKey<MyModel, "Item"> = {order: {id: 123}, product: {code: "123", msrp: 19.95}};
-    
+    let itemDeepKey:  EntityKey<MyModel, "Item"> = {order: {id: 123}, product: {code: "123", msrp: 19.95}};
+
     // @ts-expect-error (should be either code or id)
     let x7pk: XOR<[ EntityKey<MyModel, "Order">,  EntityKey<MyModel, "Product">]> = {code: "123", id: 123};
 
