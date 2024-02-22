@@ -1,123 +1,42 @@
-import { AClassDef, APropDef, ASchemaDef, ALinkPropDef, StringPropDef, BoolPropDef, IntPropDef } from "./SchemaTypes";
-import { IDBAdapter } from "./DBTypes";
-import { ARdbSchemaHints, ARdbClassHints, ARdbLinkPropHints, RdbScalarPropHints } from "./RdbTypes";
 import { ScalarType } from "./ModelTypes";
+import {
+    AClassDef, APropDef, ASchemaDef, ALinkPropDef, StringPropDef, BoolPropDef, IntPropDef
+} from "./SchemaTypes";
+import { IDBAdapter } from "./DBTypes";
+import {
+    ARdbSchemaHints, ARdbClassHints, ARdbLinkPropHints, RdbScalarPropHints, RdbClass, RdbLinkField,
+    RdbProp, RdbSchema
+} from "./RdbTypes";
 
 
 
 
 /**
- * Processed schema that keeps all the necessary information about the database structure.
- */
-export type RdbSchema = { [P: string]: RdbClass }
-
-/**
- * Information about class in the processed schema
- */
-export type RdbClass =
-{
-    /** Class name */
-    name: string;
-
-    /** Class definition */
-    classDef: AClassDef;
-
-    /** Table name */
-    table: string;
-
-    /** Information about properties */
-    props: { [P: string]: RdbProp };
-
-    /**
-     * Maps names of fields constituting the class primary key, to arrays of property names to
-     * get to the value of the appropriate key part. If the class doesn't have primary key, this
-     * value is undefined.
-     *
-     * **Examples:**
-     * - If primary key is defined as `{id: number}` and the field is not redefined, the value
-     *   will be `{id: ["id"]}`.
-     * - If primary key is defined as `{p1: string, p2: number}` and the field names are redefined
-     *   as `part1` and `part2`, the value will be `{part1: ["p1"], part2: ["p2"]}`.
-     * - If a link is part of the primary key, for example, `{product: Product}` where Product's
-     *   primary key is `{code: string}` and the field for `product` is redefined as `product_code`,
-     *   the value will be `{product_code: ["product", "code"]}`.
-     */
-    key?: { [P: string]: string[] };
-}
-
-/**
- * Information about class property in the processed schema
- */
-export type RdbProp =
-{
-    /** Property name */
-    name: string;
-
-    /** Property definition from the schema definition */
-    propDef: APropDef;
-
-    /**
-     * If the property is a scalar, then this is field name. If the property is a link, then this
-     * is an object where the keys are field names and the values are arrays of property names to
-     * get to the value of the appropriate key part. This property is undefined for multi-links.
-     */
-    field?: string | Record<string, RdbLinkField>;
-
-    /**
-     * Database-specific type of the field corresponding to the property. This can be undefined
-     * if the property is a link, which consists of more than one field, or if it is a multi-link.
-     */
-    ft?: string;
-}
-
-
-
-/**
- * Information about single-link property in the processed schema. It contains information about
- * the field(s) constituting the foreign key and their types. In addition, it has a chain of
- * property names of nested keys - in case the key of a target class itself contains a foreign key.
- */
-export type RdbLinkField =
-{
-    /**
-     * Array of property names of linked objects` keys up to the scalar property.
-     */
-    propChain: string[];
-
-    /**
-     * Database-specific type of the field corresponding to the property. This can be undefined
-     * if the property is a link, which consists of more than one field, or if it is a multi-link.
-     */
-    ft: string;
-}
-
-
-
-/**
- * Represents an adapter that knows to work with a database implementation. Neshek Repository
- * object calls methods of this interface to read from and write to the database.
+ * Represents an adapter that knows to work with a relational database. To support concrete
+ * databases, an adapter class should derive from this class.
  */
 export abstract class RdbAdapter implements IDBAdapter
 {
+    // Processed schema
     protected rdbSchema: RdbSchema;
 
 
 
-    constructor(schema: ASchemaDef, schemaHints?: ARdbSchemaHints)
+    constructor(schemaDef: ASchemaDef, schemaHints?: ARdbSchemaHints)
     {
-        this.rdbSchema = this.processSchema(schema, schemaHints);
+        this.rdbSchema = this.processSchema(schemaDef, schemaHints);
     }
 
 
 
     /** Processes schema definition and optional hints and creates RDBSchema object */
-    private processSchema(schema: ASchemaDef, schemaHints: ARdbSchemaHints | undefined): RdbSchema
+    private processSchema(schemaDef: ASchemaDef, schemaHints: ARdbSchemaHints | undefined): RdbSchema
     {
         let rdbSchema: RdbSchema = {};
 
         // perform first pass over classes and process their regular properties
-        for (let className in schema.classes)
-            rdbSchema[className] = this.createClass(schema, schemaHints, className)
+        for (let className in schemaDef.classes)
+            rdbSchema[className] = this.processClass(schemaDef, schemaHints, className)
 
         // perform second pass over classes and process their link properties
         for (let className in rdbSchema)
@@ -136,10 +55,10 @@ export abstract class RdbAdapter implements IDBAdapter
     }
 
     /** Creates RDBClass object and its properties except for the link properties */
-    private createClass(schema: ASchemaDef, schemaHints: ARdbSchemaHints | undefined,
+    private processClass(schemaDef: ASchemaDef, schemaHints: ARdbSchemaHints | undefined,
         className: string): RdbClass
     {
-        let classDef = schema.classes[className];
+        let classDef = schemaDef.classes[className];
         let classHints = schemaHints?.classes?.[className];
 
         let rdbClass: RdbClass = {
@@ -150,28 +69,23 @@ export abstract class RdbAdapter implements IDBAdapter
         }
 
         for (let propName in classDef.props)
-            rdbClass.props[propName] = this.createProp(schema, schemaHints, classDef, classHints, propName);
+            rdbClass.props[propName] = this.processNonLinkProp(schemaDef, schemaHints, classDef,
+                classHints, propName);
 
         return rdbClass;
     }
 
-    private createProp(schema: ASchemaDef, schemaHints: ARdbSchemaHints | undefined,
+    /** Processes the given non-link and non-multilink property */
+    private processNonLinkProp(schemaDef: ASchemaDef, schemaHints: ARdbSchemaHints | undefined,
         classDef: AClassDef, classHints: ARdbClassHints | undefined, propName: string): RdbProp
     {
-        let propDef = classDef.props[propName] as APropDef;
+        let propDef = classDef.props[propName];
         let propHints = classHints?.props?.[propName];
 
         // determine field name and type based on property's data type and property hints.
         let field: RdbProp["field"];
         let ft: string | undefined;
-        if (propDef.dt === "link")
-        {
-            field = {};
-
-            // for each property comprizing the primary key of the target class, get chain of
-            // properties starting from the target class and until a scalar property.
-        }
-        else if (propDef.dt !== "multilink")
+        if (propDef.dt !== "multilink" && propDef.dt !== "link")
         {
             // take field name from the property hint or make it the same as the property name
             field = propHints?.name as string ?? propName;
@@ -224,7 +138,7 @@ export abstract class RdbAdapter implements IDBAdapter
             newChain.push(keyPropName);
 
             // get property definition and check the data type
-            let keyPropDef = targetClassDef.props[keyPropName] as APropDef;
+            let keyPropDef = targetClassDef.props[keyPropName];
             let keyRdbProp = targetRdbClass.props[keyPropName];
             let keyPropHints = propHints?.[keyPropName];
             if (keyPropDef.dt !== "link")
@@ -363,11 +277,11 @@ export abstract class RdbAdapter implements IDBAdapter
                 fields[prop.field] = key[p];
             else
             {
-                for (let field in prop.field)
+                for (let fieldName in prop.field)
                 {
                     // follow chain of property names defined for the field to get to the value
                     // in the key
-                    let propChain = prop.field[field].propChain;
+                    let propChain = prop.field[fieldName].propChain;
                     let curKeyPart = key;
                     for (let propInChain of propChain)
                     {
@@ -378,7 +292,7 @@ export abstract class RdbAdapter implements IDBAdapter
                     }
 
                     // after the loop, curKeyPart points to the scalar value of the last property
-                    fields[field] = curKeyPart as ScalarType;
+                    fields[fieldName] = curKeyPart as ScalarType;
                 }
             }
         }
