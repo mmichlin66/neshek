@@ -1,6 +1,5 @@
-import { SchemaDef } from "neshek"
+import { SchemaDef } from "../index"
 import { MyModel } from "./TestModel"
-
 
 
 export let mySchema: SchemaDef<MyModel> = {

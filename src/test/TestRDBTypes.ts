@@ -1,4 +1,4 @@
-import { RdbSchemaHints } from "neshek"
+import { RdbSchemaHints } from "../index"
 import { MyModel } from "./TestModel"
 
 

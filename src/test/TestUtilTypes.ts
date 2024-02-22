@@ -1,4 +1,4 @@
-import { ArrayToUnion, KeysToTuple, UnionToTuple, XOR } from "neshek"
+import { XOR } from "../index"
 
 type User = {username: string, name: string, first?: string}
 type Group = {name: string, members?: string[]}

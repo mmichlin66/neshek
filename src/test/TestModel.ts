@@ -1,7 +1,7 @@
 import {
     ModelClassName, ModelClasses, Model, Class, MultiLink, NameOfClass,
-    Struct, XOR, Entity, EntityKey
-} from "neshek";
+    Struct, Entity, EntityKey, XOR
+} from "../index";
 
 
 

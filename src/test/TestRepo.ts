@@ -1,4 +1,4 @@
-import { IRepository, AModel, SchemaDef } from "neshek"
+import { IRepository, AModel, SchemaDef } from "../index"
 import { mySchema } from "./TestSchema";
 
 

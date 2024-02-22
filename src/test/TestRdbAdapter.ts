@@ -1,4 +1,4 @@
-import { RdbAdapter, RdbClass, ScalarType } from "neshek"
+import { RdbAdapter, RdbClass, ScalarType } from "../index"
 
 
 
