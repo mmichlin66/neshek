@@ -41,6 +41,16 @@ export let mySchema: SchemaDef<MyModel> = {
             },
             key: ["item"],
         },
+        Person: {
+            props: {
+                fn: {dt: "str"},
+                ln: {dt: "str"},
+                dob: {dt: "str"},
+                address: {dt: "str"},
+                phone: {dt: "str"},
+            },
+            key: ["fn", "ln", "dob"],
+        },
     },
 
     structs: {

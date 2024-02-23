@@ -68,7 +68,7 @@ export type RdbSchemaHints<M extends AModel> = ARdbSchemaHints &
     fieldTypeFunc?: <T>(propDef: PropDef<M,T>) => string;
 
     /** Hints for individual classes */
-    classes?: { [CN in ModelClassName<M>]: RDBClassHints<M,CN>}
+    classes?: { [CN in ModelClassName<M>]?: RDBClassHints<M,CN>}
 }
 
 

@@ -17,7 +17,10 @@ export interface IDBAdapter
      * @param key
      * @param props
      */
-    get(className: string, key: Record<string,any>, props: any): Record<string,any> | null;
+    get(className: string, key: Record<string,any>, props: string[]): Record<string,any> | null;
+
+    insert(className: string, obj: Record<string,any>): void;
+
 }
 
 

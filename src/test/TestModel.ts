@@ -37,8 +37,14 @@ export type NoteStruct = Struct<"Note"> &
     text?: string;
 }
 
+export type Person = Class<"Person", {fn: string, ln: string, dob: string}, undefined> &
+{
+    address: string;
+    phone: string;
+}
+
 export type MyModel = Model<
-    [OrderClass, ProductClass, ItemClass, ExtraItemInfoClass],
+    [OrderClass, ProductClass, ItemClass, ExtraItemInfoClass, Person],
     [NoteStruct]
 >;
 

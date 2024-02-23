@@ -231,74 +231,132 @@ export abstract class RdbAdapter implements IDBAdapter
      * @param key
      * @param props
      */
-    public get(className: string, key: Record<string,any>, props: any): Record<string,any> | null
+    public get(className: string, key: Record<string,any>, props: string[]): Record<string,any> | null
     {
         // get the class object
         let cls = this.rdbSchema[className];
         if (!cls)
             throw new Error("Class not found");
 
-        let keyFields = this.convertPropsToFields(cls, key);
+        let keyFields = convertPropToFieldValues(cls, key);
 
-        let obj = this.getObject(cls, keyFields);
+        // convert array of property names to map of property names to fields names
+        let propToFieldNames = convertPropToFieldNames(cls, props);
+
+        let obj = this.getObject(cls, keyFields, propToFieldNames.arr);
         if (!obj)
             return null;
 
+        // convert object containing fields to object containing properties
+
         // !!! Temp
         return obj;
-
-        // let result: Record<string,any> = {};
-        // // for (let prop of props)
-        // //     result[prop] = obj.prop;
-
-        // return result;
     }
 
-    protected abstract getObject(cls: RdbClass, keyFields: Record<string,ScalarType>): Record<string,any> | null;
+    protected abstract getObject(cls: RdbClass, keyFields: Record<string,ScalarType>,
+        fields: string[]): Record<string,any> | null;
 
 
+
+    public insert(className: string, obj: Record<string,any>): void
+    {
+    }
+
+    protected abstract insertObjectObject(cls: RdbClass, obj: Record<string,ScalarType>): void;
+}
+
+
+
+/**
+ * Represents mapping of property names of a certain class to field names representing this class
+ * in a table.
+ */
+type PropToFieldNames =
+{
+    /**
+     * Map of prop names to field names (ther can be multiple field names for a single prop name).
+     */
+    map: Record<string, string | string[]>;
 
     /**
-     * Converts an object with entity properties and their values to an object mapping field names
-     * to the values.
+     * Flat array of field names in the order corresponding the order of the prop names.
      */
-    private convertPropsToFields(cls: RdbClass, key: Record<string,any>): Record<string,ScalarType>
+    arr: string[];
+}
+
+/**
+ * For the given class, converts every property name in the array to the corresponding field
+ * name(s) and returns a map of the property names to field names. Since for some properties
+ * (links), one property can be represented by multiple fields, the values in the map might be
+ * arrays of field names rather than a single field name.
+ */
+function convertPropToFieldNames(cls: RdbClass, propNames: string[]): PropToFieldNames
+{
+    let map: Record<string, string | string[]> = {};
+    let arr: string[] = [];
+    for (let propName of propNames)
     {
-        let fields: Record<string,ScalarType> = {}
-        for (let p in key)
+        let prop = cls.props[propName];
+        if (!prop)
+            throw new Error("Property not found");
+        else if (!prop.field)
+            throw new Error("Multilink property cannot be part of a key");
+
+        if (typeof prop.field === "string")
         {
-            let prop = cls.props[p];
-            if (!prop)
-                throw new Error("Property not found");
-            else if (!prop.field)
-                throw new Error("Multilink property cannot be part of a key");
+            map[propName] = prop.field;
+            arr.push(prop.field);
+        }
+        else
+        {
+            let fieldNames = Object.keys(prop.field)
+            map[propName] = fieldNames;
+            arr.push(...fieldNames);
+        }
+    }
 
-            if (typeof prop.field !== "object")
-                fields[prop.field] = key[p];
-            else
+    return {map, arr};
+}
+
+
+
+/**
+ * Converts an object with entity properties and their values to an object mapping field names
+ * to the values.
+ */
+function convertPropToFieldValues(cls: RdbClass, propValues: Record<string,any>): Record<string,ScalarType>
+{
+    let fieldNames = convertPropToFieldNames(cls, Object.keys(propValues)).map;
+    let fieldValues: Record<string,ScalarType> = {}
+    for (let propName in propValues)
+    {
+        let field = fieldNames[propName];
+        if (typeof field === "string")
+            fieldValues[field] = propValues[propName];
+        else
+        {
+            for (let fieldName of field)
             {
-                for (let fieldName in prop.field)
+                // follow chain of property names defined for the field to get to the value
+                // in the key
+                let field = cls.props[propName].field as Record<string, RdbLinkField>;
+                let propChain = field[fieldName].propChain;
+                let curKeyPart: any = propValues;
+                for (let propInChain of propChain)
                 {
-                    // follow chain of property names defined for the field to get to the value
-                    // in the key
-                    let propChain = prop.field[fieldName].propChain;
-                    let curKeyPart = key;
-                    for (let propInChain of propChain)
-                    {
-                        if (propInChain in curKeyPart)
-                            curKeyPart = curKeyPart[propInChain]
-                        else
-                            throw new Error("Invalid part of a key");
-                    }
-
-                    // after the loop, curKeyPart points to the scalar value of the last property
-                    fields[fieldName] = curKeyPart as ScalarType;
+                    if (propInChain in curKeyPart)
+                        curKeyPart = curKeyPart[propInChain]
+                    else
+                        throw new Error("Invalid part of a key");
                 }
+
+                // after the loop, curKeyPart points to the scalar value of the last property
+                fieldValues[fieldName] = curKeyPart as ScalarType;
             }
         }
-
-        return fields;
     }
+
+    return fieldValues;
 }
 
 
