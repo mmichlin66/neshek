@@ -241,16 +241,14 @@ export abstract class RdbAdapter implements IDBAdapter
         let keyFields = convertPropToFieldValues(cls, key);
 
         // convert array of property names to map of property names to fields names
-        let propToFieldNames = convertPropToFieldNames(cls, props);
+        let fieldNames = mapPropsToFields(cls, props);
 
-        let obj = this.getObject(cls, keyFields, propToFieldNames.arr);
+        let obj = this.getObject(cls, keyFields, fieldNames);
         if (!obj)
             return null;
 
         // convert object containing fields to object containing properties
-
-        // !!! Temp
-        return obj;
+        return convertFieldToPropValues(cls, props, obj);
     }
 
     protected abstract getObject(cls: RdbClass, keyFields: Record<string,ScalarType>,
@@ -268,32 +266,14 @@ export abstract class RdbAdapter implements IDBAdapter
 
 
 /**
- * Represents mapping of property names of a certain class to field names representing this class
- * in a table.
- */
-type PropToFieldNames =
-{
-    /**
-     * Map of prop names to field names (ther can be multiple field names for a single prop name).
-     */
-    map: Record<string, string | string[]>;
-
-    /**
-     * Flat array of field names in the order corresponding the order of the prop names.
-     */
-    arr: string[];
-}
-
-/**
  * For the given class, converts every property name in the array to the corresponding field
  * name(s) and returns a map of the property names to field names. Since for some properties
  * (links), one property can be represented by multiple fields, the values in the map might be
  * arrays of field names rather than a single field name.
  */
-function convertPropToFieldNames(cls: RdbClass, propNames: string[]): PropToFieldNames
+function mapPropsToFields(cls: RdbClass, propNames: string[]): string[]
 {
-    let map: Record<string, string | string[]> = {};
-    let arr: string[] = [];
+    let fieldNames: string[] = [];
     for (let propName of propNames)
     {
         let prop = cls.props[propName];
@@ -303,39 +283,34 @@ function convertPropToFieldNames(cls: RdbClass, propNames: string[]): PropToFiel
             throw new Error("Multilink property cannot be part of a key");
 
         if (typeof prop.field === "string")
-        {
-            map[propName] = prop.field;
-            arr.push(prop.field);
-        }
+            fieldNames.push(prop.field);
         else
-        {
-            let fieldNames = Object.keys(prop.field)
-            map[propName] = fieldNames;
-            arr.push(...fieldNames);
-        }
+            fieldNames.push(...Object.keys(prop.field));
     }
 
-    return {map, arr};
+    return fieldNames;
 }
-
-
 
 /**
  * Converts an object with entity properties and their values to an object mapping field names
  * to the values.
  */
-function convertPropToFieldValues(cls: RdbClass, propValues: Record<string,any>): Record<string,ScalarType>
+function convertPropToFieldValues(cls: RdbClass, propValues: Record<string,any>): Record<string,any>
 {
-    let fieldNames = convertPropToFieldNames(cls, Object.keys(propValues)).map;
     let fieldValues: Record<string,ScalarType> = {}
     for (let propName in propValues)
     {
-        let field = fieldNames[propName];
-        if (typeof field === "string")
-            fieldValues[field] = propValues[propName];
+        let prop = cls.props[propName];
+        if (!prop)
+            throw new Error("Property not found");
+        else if (!prop.field)
+            throw new Error("Multilink property cannot be part of a key");
+
+        if (typeof prop.field === "string")
+            fieldValues[prop.field] = propValues[propName];
         else
         {
-            for (let fieldName of field)
+            for (let fieldName in prop.field)
             {
                 // follow chain of property names defined for the field to get to the value
                 // in the key
@@ -351,7 +326,7 @@ function convertPropToFieldValues(cls: RdbClass, propValues: Record<string,any>)
                 }
 
                 // after the loop, curKeyPart points to the scalar value of the last property
-                fieldValues[fieldName] = curKeyPart as ScalarType;
+                fieldValues[fieldName] = curKeyPart;
             }
         }
     }
@@ -359,5 +334,49 @@ function convertPropToFieldValues(cls: RdbClass, propValues: Record<string,any>)
     return fieldValues;
 }
 
+
+/**
+ * Converts an object with entity properties and their values to an object mapping field names
+ * to the values.
+ */
+function convertFieldToPropValues(cls: RdbClass, propNames: string[],
+    fieldValues: Record<string,any>): Record<string,any>
+{
+    let result: Record<string,any> = {};
+    for (let propName of propNames)
+    {
+        let prop = cls.props[propName];
+        if (!prop)
+            throw new Error("Property not found");
+        else if (!prop.field)
+            throw new Error("Multilink property cannot be part of a key");
+
+        if (typeof prop.field === "string")
+            result[prop.field] = fieldValues[prop.field];
+        else
+        {
+            for (let fieldName in prop.field)
+            {
+                // follow chain of property names defined for the field to get to the value
+                // in the key
+                let field = cls.props[propName].field as Record<string, RdbLinkField>;
+                let propChain = field[fieldName].propChain;
+                let curKeyPart: any = result;
+                for (let propInChain of propChain)
+                {
+                    if (propInChain in curKeyPart)
+                        curKeyPart = result[propInChain] = {}
+                    else
+                        throw new Error("Invalid part of a key");
+                }
+
+                // after the loop, curKeyPart points to the scalar value of the last property
+                curKeyPart = fieldValues[fieldName];
+            }
+        }
+    }
+
+    return fieldValues;
+}
 
 
