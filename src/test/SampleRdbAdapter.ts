@@ -2,7 +2,7 @@ import { RdbAdapter, RdbClass, ScalarType } from "../index"
 
 
 
-export class TestRdbAdapter extends RdbAdapter
+export class SampleRdbAdapter extends RdbAdapter
 {
     // Map from class names to a map from flattenned object keys to objects
     private objects = new Map<string, Map<string, Record<string,any>> | undefined>();

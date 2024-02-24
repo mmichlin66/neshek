@@ -7,7 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "TestDBAdapter",
+            "name": "main",
             "skipFiles": [
                 "<node_internals>/**"
             ],
