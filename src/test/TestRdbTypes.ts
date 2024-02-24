@@ -27,6 +27,7 @@ export let myHints: RdbSchemaHints<MyModel> = {
             },
         },
         ExtraItemInfo: {
+            tableName: "extra_info_objects",
             props: {
                 item: {order: {id: {name: "orderId", ft: "int"}}, product: {code: {name: "productCode"}}},
             },

@@ -227,40 +227,68 @@ export abstract class RdbAdapter implements IDBAdapter
     /**
      * Retrieves an instance of the given class using the given primary key or unique constraint
      * and return values of the given set of properties.
-     * @param className
-     * @param key
-     * @param props
+     * @param className Name of class in the schema
+     * @param key Object with primary key property values
+     * @param props Array of property names to retrieve.
      */
     public get(className: string, key: Record<string,any>, props: string[]): Record<string,any> | null
     {
         // get the class object
-        let cls = this.rdbSchema[className];
-        if (!cls)
-            throw new Error("Class not found");
+        let cls = getClassFromSchema(this.rdbSchema, className);
 
-        let keyFields = convertPropToFieldValues(cls, key);
+        // convert the key object containing property names to one containing field names
+        let keyFieldValues = convertValuesPropsToFields(cls, key);
 
         // convert array of property names to map of property names to fields names
-        let fieldNames = mapPropsToFields(cls, props);
+        let fieldNames = convertNamesPropsToFields(cls, props);
 
-        let obj = this.getObject(cls, keyFields, fieldNames);
+        let obj = this.getObject(cls.table, keyFieldValues, fieldNames);
         if (!obj)
             return null;
 
-        // convert object containing fields to object containing properties
-        return convertFieldToPropValues(cls, props, obj);
+        // convert object containing field names to obe containing property names
+        return convertValuesFieldsToProps(cls, props, obj);
     }
 
-    protected abstract getObject(cls: RdbClass, keyFields: Record<string,ScalarType>,
-        fields: string[]): Record<string,any> | null;
-
-
-
-    public insert(className: string, obj: Record<string,any>): void
+    /**
+     * Inserts a new object of the given class with the given field values.
+     * @param className Name of class in the schema
+     * @param propValues Values of properties to write to the object.
+     */
+    public insert(className: string, propValues: Record<string,any>): void
     {
+        // get the class object
+        let cls = getClassFromSchema(this.rdbSchema, className);
+
+        // get the key properties from the file definition and convert them to field names
+        let keyPropNames = cls.classDef.key!;
+        let keyFieldNames = convertNamesPropsToFields(cls, keyPropNames);
+
+        // convert the object containing property names to one containing field names
+        let fieldValues = convertValuesPropsToFields(cls, propValues);
+
+        this.insertObject(cls.table, fieldValues, keyFieldNames);
     }
 
-    protected abstract insertObjectObject(cls: RdbClass, obj: Record<string,ScalarType>): void;
+    /**
+     * Retrieves the requested fields of the object from the given table identified by the given key.
+     * @param tableName Name of the table storing objects.
+     * @param keyFieldValues Primary key field values.
+     * @param fieldNames Names of the fields to retrieve.
+     */
+    protected abstract getObject(tableName: string, keyFieldValues: Record<string,ScalarType>,
+        fieldNames: string[]): Record<string,any> | null;
+
+
+
+    /**
+     * Inserts a new object with the given field values to the given table.
+     * @param tableName Name of the table storing objects.
+     * @param propValues Values of fields to write to the object.
+     * @param keyFieldNames Array of field names constituting the object key.
+     */
+    protected abstract insertObject(tableName: string, fieldValues: Record<string,any>,
+        keyFieldNames: string[]): void;
 }
 
 
@@ -271,21 +299,20 @@ export abstract class RdbAdapter implements IDBAdapter
  * (links), one property can be represented by multiple fields, the values in the map might be
  * arrays of field names rather than a single field name.
  */
-function mapPropsToFields(cls: RdbClass, propNames: string[]): string[]
+function convertNamesPropsToFields(cls: RdbClass, propNames: string[]): string[]
 {
     let fieldNames: string[] = [];
     for (let propName of propNames)
     {
-        let prop = cls.props[propName];
-        if (!prop)
-            throw new Error("Property not found");
-        else if (!prop.field)
-            throw new Error("Multilink property cannot be part of a key");
+        // get the field description; if undefined, it's a multi-link and we just skip it.
+        let fieldOrFields = getPropFromClass(cls, propName)?.field;
+        if (!fieldOrFields)
+            continue;
 
-        if (typeof prop.field === "string")
-            fieldNames.push(prop.field);
+        if (typeof fieldOrFields === "string")
+            fieldNames.push(fieldOrFields);
         else
-            fieldNames.push(...Object.keys(prop.field));
+            fieldNames.push(...Object.keys(fieldOrFields));
     }
 
     return fieldNames;
@@ -295,88 +322,119 @@ function mapPropsToFields(cls: RdbClass, propNames: string[]): string[]
  * Converts an object with entity properties and their values to an object mapping field names
  * to the values.
  */
-function convertPropToFieldValues(cls: RdbClass, propValues: Record<string,any>): Record<string,any>
+function convertValuesPropsToFields(cls: RdbClass, propValues: Record<string,any>): Record<string,any>
 {
     let fieldValues: Record<string,ScalarType> = {}
     for (let propName in propValues)
     {
-        let prop = cls.props[propName];
-        if (!prop)
-            throw new Error("Property not found");
-        else if (!prop.field)
-            throw new Error("Multilink property cannot be part of a key");
+        // get the field description; if undefined, it's a multi-link and we just skip it.
+        let fieldOrFields = getPropFromClass(cls, propName)?.field;
+        if (!fieldOrFields)
+            continue;
 
-        if (typeof prop.field === "string")
-            fieldValues[prop.field] = propValues[propName];
+        if (typeof fieldOrFields === "string")
+            fieldValues[fieldOrFields] = propValues[propName];
         else
         {
-            for (let fieldName in prop.field)
+            for (let fieldName in fieldOrFields)
             {
-                // follow chain of property names defined for the field to get to the value
-                // in the key
-                let field = cls.props[propName].field as Record<string, RdbLinkField>;
-                let propChain = field[fieldName].propChain;
-                let curKeyPart: any = propValues;
+                // follow the chain of property names defined for the field to get to the value
+                // in the propValues object.
+                let propChain = fieldOrFields[fieldName].propChain;
+                let nextPart = propValues;
+                let i = propChain.length - 1;
                 for (let propInChain of propChain)
                 {
-                    if (propInChain in curKeyPart)
-                        curKeyPart = curKeyPart[propInChain]
+                    if (propInChain in nextPart)
+                    {
+                        if (i > 0)
+                        {
+                            nextPart = nextPart[propInChain];
+                            i--;
+                        }
+                        else
+                            fieldValues[fieldName] = nextPart[propInChain];
+                    }
                     else
-                        throw new Error("Invalid part of a key");
+                        throw new Error("Invalid property path");
                 }
-
-                // after the loop, curKeyPart points to the scalar value of the last property
-                fieldValues[fieldName] = curKeyPart;
             }
         }
     }
 
     return fieldValues;
 }
-
 
 /**
  * Converts an object with entity properties and their values to an object mapping field names
  * to the values.
  */
-function convertFieldToPropValues(cls: RdbClass, propNames: string[],
+function convertValuesFieldsToProps(cls: RdbClass, propNames: string[],
     fieldValues: Record<string,any>): Record<string,any>
 {
-    let result: Record<string,any> = {};
+    let propValues: Record<string,any> = {};
     for (let propName of propNames)
     {
-        let prop = cls.props[propName];
-        if (!prop)
-            throw new Error("Property not found");
-        else if (!prop.field)
-            throw new Error("Multilink property cannot be part of a key");
+        // get the field description; if undefined, it's a multi-link and we just skip it.
+        let fieldOrFields = getPropFromClass(cls, propName)?.field;
+        if (!fieldOrFields)
+            continue;
 
-        if (typeof prop.field === "string")
-            result[prop.field] = fieldValues[prop.field];
+        if (typeof fieldOrFields === "string")
+            propValues[propName] = fieldValues[fieldOrFields];
         else
         {
-            for (let fieldName in prop.field)
+            for (let fieldName in fieldOrFields)
             {
-                // follow chain of property names defined for the field to get to the value
-                // in the key
-                let field = cls.props[propName].field as Record<string, RdbLinkField>;
-                let propChain = field[fieldName].propChain;
-                let curKeyPart: any = result;
+                // follow chain of property names defined for the field to build the proper
+                // chain of objects until the field value for the last property in the chain.
+                let propChain = fieldOrFields[fieldName].propChain;
+                let nextProp = propValues;
+                let i = propChain.length - 1;
                 for (let propInChain of propChain)
                 {
-                    if (propInChain in curKeyPart)
-                        curKeyPart = result[propInChain] = {}
+                    if (i > 0)
+                    {
+                        nextProp = nextProp[propInChain] = {}
+                        i--;
+                    }
                     else
-                        throw new Error("Invalid part of a key");
+                        nextProp[propInChain] = fieldValues[fieldName];
                 }
-
-                // after the loop, curKeyPart points to the scalar value of the last property
-                curKeyPart = fieldValues[fieldName];
             }
         }
     }
 
-    return fieldValues;
+    return propValues;
 }
+
+
+/**
+ * Returns RdbClass object for the given class from the given schema. If such class doesn't
+ * exist in the scheam, throws an exception.
+ */
+function getClassFromSchema(schema: RdbSchema, className: string): RdbClass
+{
+    // get the class object
+    let cls = schema[className];
+    if (!cls)
+        throw new Error("Class not found");
+    else
+        return cls;
+}
+
+/**
+ * Returns RdbProp object for the given property from the given class. If such property doesn't
+ * exist in the class, throws an exception.
+ */
+function getPropFromClass(cls: RdbClass, propName: string): RdbProp
+{
+    let prop = cls.props[propName];
+    if (!prop)
+        throw new Error("Property not found");
+    else
+        return prop;
+}
+
 
 

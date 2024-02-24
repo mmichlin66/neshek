@@ -17,22 +17,22 @@ export class TestRdbAdapter extends RdbAdapter
 
 
     /**
-     * Retrieves the requested fields of the object of the given class identified by the given key.
+     * Retrieves the requested fields of the object from the given table identified by the given key.
      */
-    protected getObject(cls: RdbClass, keyFields: Record<string,ScalarType>,
-        fields: string[]): Record<string,any> | null
+    protected getObject(tableName: string, keyFieldValues: Record<string,ScalarType>,
+        fieldNames: string[]): Record<string,any> | null
     {
-        let map = this.objects[cls.name];
+        let map = this.objects.get(tableName);
         if (!map)
             return null;
 
-        let flattenedKey = flattenFields(keyFields);
-        let obj = map[flattenedKey];
+        let flattenedKey = flattenFields(keyFieldValues);
+        let obj = map.get(flattenedKey);
         if (!obj)
             return null;
 
         let objToReturn: Record<string,ScalarType> = {};
-        for (let field of fields)
+        for (let field of fieldNames)
             objToReturn[field] = obj[field];
 
         return objToReturn;
@@ -40,8 +40,34 @@ export class TestRdbAdapter extends RdbAdapter
 
 
 
-    protected insertObjectObject(cls: RdbClass, obj: Record<string,ScalarType>): void
+    /**
+     * Inserts a new object with the given values to the given table
+     */
+    protected insertObject(tableName: string, fieldValues: Record<string,ScalarType>,
+        keyFieldNames: string[]): void
     {
+        let map = this.objects.get(tableName);
+        if (!map)
+        {
+            map = new Map<string, Record<string,any>>();
+            this.objects.set(tableName, map);
+        }
+
+        // create key object
+        let keyFieldValues: Record<string,any> = {};
+        for (let keyFieldName of keyFieldNames)
+            keyFieldValues[keyFieldName] = fieldValues[keyFieldName];
+
+        let flattenedKey = flattenFields(keyFieldValues);
+        let obj = map.get(flattenedKey);
+        if (obj)
+            throw new Error("Object already exists");
+
+        obj = {}
+        for (let fieldName in fieldValues)
+            obj[fieldName] = fieldValues[fieldName];
+
+        map.set(flattenedKey, obj);
     }
 }
 

@@ -368,7 +368,11 @@ export type ClassDef<M extends AModel, CN extends ModelClassName<M>> = AClassDef
      * Defines what fields constitute a primary key for the class. The key can be a single field
      * or a collection of fields.
      */
-    key?: KeysToTuple<EntityKey<M,CN>>;
+    key?: (string & keyof EntityKey<M,CN>)[];
+    // the following is commented out although it defines the proper tuple type; however, the
+    // correct order of properties in the tuple is non-deterministic and the compiler sometimes
+    // fails.
+    // key?: KeysToTuple<EntityKey<M,CN>>;
 }
 
 /**

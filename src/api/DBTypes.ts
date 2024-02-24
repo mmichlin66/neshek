@@ -13,13 +13,13 @@ export interface IDBAdapter
     /**
      * Retrieves an instance of the given class using the given primary key or unique constraint
      * and return values of the given set of properties.
-     * @param className
-     * @param key
-     * @param props
+     * @param className Name of class in the schema
+     * @param key Object with primary key property values
+     * @param props Array of property names to retrieve.
      */
     get(className: string, key: Record<string,any>, props: string[]): Record<string,any> | null;
 
-    insert(className: string, obj: Record<string,any>): void;
+    insert(className: string, propValues: Record<string,any>): void;
 
 }
 
