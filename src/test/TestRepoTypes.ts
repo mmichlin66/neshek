@@ -48,7 +48,7 @@ let product3 = await session.get("Product", {code: "123"}, {
 let order = session.get("Order", {id: 123}, {
     id: undefined,
     items: {
-        props: {
+        propSet: {
             price: 2 // filters items with price = 2
         }
     },

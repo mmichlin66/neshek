@@ -7,6 +7,8 @@ import {
     ARdbSchemaHints, ARdbClassHints, ARdbLinkPropHints, RdbScalarPropHints, RdbClass, RdbLinkField,
     RdbProp, RdbSchema
 } from "./RdbTypes";
+import { APropSet } from "./QueryTypes";
+import { RepoError } from "./RepoAPI";
 
 
 
@@ -222,16 +224,16 @@ export abstract class RdbAdapter implements IDBAdapter
      * Flag indicating whether the underlying DB supports foreign keys and enforces their
      * consistency.
      */
-    public get supportsReferentialIntegrity(): boolean {return true; }
+    get supportsReferentialIntegrity(): boolean {return true; }
 
     /**
      * Retrieves an instance of the given class using the given primary key or unique constraint
      * and return values of the given set of properties.
      * @param className Name of class in the schema
      * @param key Object with primary key property values
-     * @param props Array of property names to retrieve.
+     * @param propSet Array of property names to retrieve.
      */
-    public get(className: string, key: Record<string,any>, props: string[]): Record<string,any> | null
+    async get(className: string, key: Record<string,any>, propSet: APropSet): Promise<Record<string,any> | null>
     {
         // get the class object
         let cls = getClassFromSchema(this.rdbSchema, className);
@@ -239,15 +241,18 @@ export abstract class RdbAdapter implements IDBAdapter
         // convert the key object containing property names to one containing field names
         let keyFieldValues = convertValuesPropsToFields(cls, key);
 
+        // get the list of fields from the PropSet.
+        let propNames = getPropNamesFromPropSet(cls, propSet);
+
         // convert array of property names to map of property names to fields names
-        let fieldNames = convertNamesPropsToFields(cls, props);
+        let fieldNames = convertNamesPropsToFields(cls, propNames);
 
         let obj = this.getObject(cls.table, keyFieldValues, fieldNames);
         if (!obj)
             return null;
 
         // convert object containing field names to obe containing property names
-        return convertValuesFieldsToProps(cls, props, obj);
+        return convertValuesFieldsToProps(cls, propNames, obj);
     }
 
     /**
@@ -255,7 +260,7 @@ export abstract class RdbAdapter implements IDBAdapter
      * @param className Name of class in the schema
      * @param propValues Values of properties to write to the object.
      */
-    public insert(className: string, propValues: Record<string,any>): void
+    async insert(className: string, propValues: Record<string,any>): Promise<void>
     {
         // get the class object
         let cls = getClassFromSchema(this.rdbSchema, className);
@@ -277,7 +282,7 @@ export abstract class RdbAdapter implements IDBAdapter
      * @param fieldNames Names of the fields to retrieve.
      */
     protected abstract getObject(tableName: string, keyFieldValues: Record<string,ScalarType>,
-        fieldNames: string[]): Record<string,any> | null;
+        fieldNames: string[]): Promise<Record<string,any> | null>;
 
 
 
@@ -288,10 +293,38 @@ export abstract class RdbAdapter implements IDBAdapter
      * @param keyFieldNames Array of field names constituting the object key.
      */
     protected abstract insertObject(tableName: string, fieldValues: Record<string,any>,
-        keyFieldNames: string[]): void;
+        keyFieldNames: string[]): Promise<void>;
 }
 
 
+
+
+/**
+ * Returns a flat array of property names from the given PropSet. If this is already an array of
+ * names, return it as is; otherwise (if it is an object form of the PropSet), return an array of
+ * its keys. If it is a string, then it should be comma-separated list of property names.
+ */
+function getPropNamesFromPropSet(cls: RdbClass, propSet: APropSet): string[]
+{
+    if (typeof propSet === "string")
+    {
+        // split the string into property names and check that the names are valid
+        let propNames = propSet.split(/[\s,;]+/);
+        let result: string[] = [];
+        for (let propName of propNames)
+        {
+            let prop = cls.props[propName];
+            if (!prop)
+                RepoError.PropNotFound(cls.name, propName);
+            else if (prop.propDef.dt !== "multilink")
+                result.push(propName);
+        }
+
+        return result;
+    }
+    else
+        return Array.isArray(propSet) ? propSet : Object.keys(propSet);
+}
 
 /**
  * For the given class, converts every property name in the array to the corresponding field
@@ -418,7 +451,7 @@ function getClassFromSchema(schema: RdbSchema, className: string): RdbClass
     // get the class object
     let cls = schema[className];
     if (!cls)
-        throw new Error("Class not found");
+        RepoError.ClassNotFound(className);
     else
         return cls;
 }
@@ -431,9 +464,18 @@ function getPropFromClass(cls: RdbClass, propName: string): RdbProp
 {
     let prop = cls.props[propName];
     if (!prop)
-        throw new Error("Property not found");
+        RepoError.PropNotFound(cls.name, propName);
     else
         return prop;
+}
+
+
+
+/** Represents an error that can be produced by repository functions. */
+export class RdbError
+{
+    static ObjectAlreadyExists(tableName: string, key: any): never
+        { throw new RepoError( "OBJECT_ALREADY_EXISTS", {tableName, key}); }
 }
 
 

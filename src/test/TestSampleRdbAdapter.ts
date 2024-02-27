@@ -5,7 +5,7 @@ import { mySchema } from "./TestSchema";
 
 
 
-export function testSampleRdbAdapterTest_insert_get(): void
+export function testSampleRdbAdapter_insert_get(): void
 {
     let db = new SampleRdbAdapter(mySchema, myHints);
 

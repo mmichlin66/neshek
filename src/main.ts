@@ -1,7 +1,9 @@
-import { testSampleRdbAdapterTest_insert_get } from "./test/TestSampleRdbAdapter";
+import { testDBRepository_insert_get } from "./test/TestDBRepository";
+import { testSampleRdbAdapter_insert_get } from "./test/TestSampleRdbAdapter";
 
 
-testSampleRdbAdapterTest_insert_get();
 
+// testSampleRdbAdapter_insert_get();
+testDBRepository_insert_get();
 
 

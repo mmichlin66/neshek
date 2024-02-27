@@ -7,22 +7,23 @@ import {
 
 export type OrderClass = Class<"Order", {id: number}, undefined> &
 {
-    time?: Date;
-    items?: MultiLink<ItemClass>;
-    // note?: NoteStruct;
+    time: Date;
+    items: MultiLink<ItemClass>;
+    // note: NoteStruct;
 }
 
 export type ProductClass = Class<"Product", {code: string}, undefined> &
 {
-    name?: string;
-    msrp?: number;
-    items?: MultiLink<ItemClass>;
+    name: string;
+    msrp: number;
+    items: MultiLink<ItemClass>;
     // notes?: NoteStruct[];
 }
 
 export type ItemClass = Class<"Item", {order: OrderClass, product: ProductClass}, undefined> &
 {
-    price?: number;
+    qty: number;
+    price: number;
     // managerNotes?: {manager: string, note: NoteStruct}
 }
 

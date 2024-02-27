@@ -49,19 +49,26 @@ import { StringKeys } from "./UtilTypes";
  * for multi-links on any level, filters are always allowed.
  */
 export type PropSet<M extends AModel, T, TAllowFilters extends boolean> =
-    T extends ScalarType | undefined ?
-        TAllowFilters extends true ? T | undefined : undefined :
     // T extends Array<infer E> | undefined ?
     //     undefined | StringKeys<E> | Query<M,E> | string :
     T extends MultiLink<infer C> | undefined ?
-        undefined | EntityPropName<M, NameOfClass<C>> | Query<M, Entity<M, NameOfClass<C>>> | string :
+        undefined | EntityPropName<M, NameOfClass<C>> | Query<M, Entity<M, NameOfClass<C>>> :
     T extends object | undefined ?
-        undefined | StringKeys<T> |
-        { [P in keyof T & string]?: PropSet<M, T[P], TAllowFilters> } &
-        { fields?: StringKeys<T> | string } :
+        undefined | keyof T & string | StringKeys<T> | (
+            {
+                [P in keyof T & string]?:
+                    T[P] extends ScalarType | undefined
+                        ? TAllowFilters extends true ? T[P] | undefined : undefined
+                        : PropSet<M, T[P], TAllowFilters>
+            } &
+            { fields?: StringKeys<T> | string }
+         ) :
     never;
 
-
+/**
+ * Represents a general non-templated structure of a query for a single object.
+ */
+export type APropSet = string | string[] | Record<string, any>;
 
 /**
  * Represents a general non-templated structure of a query for a collection of objects.
@@ -70,8 +77,8 @@ export type AQuery =
 {
     filters?: string;
     sort?: string;
+    propSet?: APropSet;
     limit?: number;
-    props?: Record<string,any>;
     cursor?: string;
 }
 
@@ -88,8 +95,8 @@ export type Query<M extends AModel, T> = AQuery &
 {
     filters?: string;
     sort?: string;
+    propSet?: PropSet<M, T, true>;
     limit?: number;
-    props?: PropSet<M, T, true>;
     cursor?: string;
 }
 

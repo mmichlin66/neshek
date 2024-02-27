@@ -4,19 +4,13 @@ import { PropSet, Query } from "./QueryTypes";
 
 
 /** Represents an error that can be produced by repository functions. */
-export type RepoError = {
+export interface IRepoError extends Error
+{
     /** Error code - even if it is numerical it should be represented as string */
     code?: string;
-
-    /** Error message */
-    message?: string;
-
-    /** Error stack trace */
-    trace?: string;
-
-    /** Downstream error that caused this error */
-    causedBy?: RepoError;
 }
+
+
 
 /**
  * Represents a generic response type returned by repository functions.
@@ -33,7 +27,7 @@ export type RepoResponse<T> = {
     data?: T;
 
     /** Operation error - only present if the `success` property is false. */
-    error?: RepoError;
+    error?: IRepoError;
 }
 
 /** Represent response from the repository `get` operation. */
@@ -79,24 +73,30 @@ export interface IRepository<M extends AModel>
 export interface IRepoSession<M extends AModel>
 {
     /**
-     * Retrieves a single object by the given key
-     * @param className
-     * @param key
-     * @param props
+     * Retrieves an instance of the given class using the given primary key or unique constraint
+     * and return values of the given set of properties.
+     * @param className Name of class in the schema
+     * @param key Object with primary key property values
+     * @param propSet PropSet object indicating what properties to retrieve.
      */
-    get<CN extends ModelClassName<M>>(
-        className: CN,
-        key: EntityKey<M,CN>,
-        props?: PropSet<M, Entity<M,CN>, false>
-    ): Promise<RepoGetResponse<Entity<M,CN>>>;
+    get<CN extends ModelClassName<M>>(className: CN, key: EntityKey<M,CN>,
+        propSet?: PropSet<M, Entity<M,CN>, false>): Promise<RepoGetResponse<Entity<M,CN>>>;
 
     /**
      * Retrieves multiple objects by the given criteria.
      * @param className
      * @param query
      */
-    query<CN extends ModelClassName<M>>(
-        className: CN,
-        query?: Query<M, Entity<M,CN>>
-    ): Promise<RepoQueryResponse<Entity<M,CN>>>;
+    query<CN extends ModelClassName<M>>(className: CN,
+        query?: Query<M, Entity<M,CN>>): Promise<RepoQueryResponse<Entity<M,CN>>>;
+
+    /**
+     * Inserts a new object of the given class with the given field values.
+     * @param className Name of class in the schema
+     * @param propValues Values of properties to write to the object.
+     */
+    insert<CN extends ModelClassName<M>>(className: CN, obj: Entity<AModel,CN>): Promise<void>
 }
+
+
+

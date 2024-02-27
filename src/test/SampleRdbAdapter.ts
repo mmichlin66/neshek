@@ -1,4 +1,4 @@
-import { RdbAdapter, RdbClass, ScalarType } from "../index"
+import { RdbAdapter, RdbError, ScalarType } from "../index"
 
 
 
@@ -13,14 +13,14 @@ export class SampleRdbAdapter extends RdbAdapter
      * Flag indicating whether the underlying DB supports foreign keys and enforces their
      * consistency.
      */
-    public get supportsReferentialIntegrity(): boolean {return false; }
+    get supportsReferentialIntegrity(): boolean {return false; }
 
 
     /**
      * Retrieves the requested fields of the object from the given table identified by the given key.
      */
-    protected getObject(tableName: string, keyFieldValues: Record<string,ScalarType>,
-        fieldNames: string[]): Record<string,any> | null
+    protected async getObject(tableName: string, keyFieldValues: Record<string,ScalarType>,
+        fieldNames: string[]): Promise<Record<string,any> | null>
     {
         let map = this.objects.get(tableName);
         if (!map)
@@ -43,8 +43,8 @@ export class SampleRdbAdapter extends RdbAdapter
     /**
      * Inserts a new object with the given values to the given table
      */
-    protected insertObject(tableName: string, fieldValues: Record<string,ScalarType>,
-        keyFieldNames: string[]): void
+    protected async insertObject(tableName: string, fieldValues: Record<string,ScalarType>,
+        keyFieldNames: string[]): Promise<void>
     {
         let map = this.objects.get(tableName);
         if (!map)
@@ -61,7 +61,7 @@ export class SampleRdbAdapter extends RdbAdapter
         let flattenedKey = flattenFields(keyFieldValues);
         let obj = map.get(flattenedKey);
         if (obj)
-            throw new Error("Object already exists");
+            RdbError.ObjectAlreadyExists(tableName, flattenedKey);
 
         obj = {}
         for (let fieldName in fieldValues)
