@@ -46,27 +46,33 @@ export class SampleRdbAdapter extends RdbAdapter
     protected async insertObject(tableName: string, fieldValues: Record<string,ScalarType>,
         keyFieldNames: string[]): Promise<void>
     {
-        let map = this.objects.get(tableName);
-        if (!map)
-        {
-            map = new Map<string, Record<string,any>>();
-            this.objects.set(tableName, map);
-        }
-
         // create key object
         let keyFieldValues: Record<string,any> = {};
         for (let keyFieldName of keyFieldNames)
             keyFieldValues[keyFieldName] = fieldValues[keyFieldName];
 
         let flattenedKey = flattenFields(keyFieldValues);
-        let obj = map.get(flattenedKey);
-        if (obj)
-            RdbError.ObjectAlreadyExists(tableName, flattenedKey);
 
-        obj = {}
+        let map = this.objects.get(tableName);
+        if (!map)
+        {
+            map = new Map<string, Record<string,any>>();
+            this.objects.set(tableName, map);
+        }
+        else
+        {
+            // check whether we already have an object with this key
+            let obj = map.get(flattenedKey);
+            if (obj)
+                RdbError.ObjectAlreadyExists(tableName, flattenedKey);
+        }
+
+        // copy field values into a new object
+        let obj: Record<string,ScalarType> = {}
         for (let fieldName in fieldValues)
             obj[fieldName] = fieldValues[fieldName];
 
+        // add the new object
         map.set(flattenedKey, obj);
     }
 }

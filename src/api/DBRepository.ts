@@ -1,7 +1,7 @@
 import { AModel, Entity, EntityKey, ModelClassName } from "./ModelTypes"
-import { AClassDef, ASchemaDef, SchemaDef } from "./SchemaTypes";
+import { AClassDef, SchemaDef } from "./SchemaTypes";
 import { APropSet, AQuery, PropSet} from "./QueryTypes";
-import { IRepoSession, IRepository, RepoGetResponse, RepoQueryResponse, RepoSessionOptions, IRepoError } from "./RepoTypes";
+import { IRepoSession, IRepository, RepoQueryResponse, RepoSessionOptions } from "./RepoTypes";
 import { IDBAdapter } from "./DBTypes";
 import { RepoError } from "./RepoAPI";
 
@@ -54,7 +54,7 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
      * @param propSet PropSet object indicating what properties to retrieve.
      */
     async get<CN extends ModelClassName<M>>(className: CN, key: EntityKey<M,CN>,
-        propSet?: PropSet<M, Entity<M,CN>, false>): Promise<RepoGetResponse<Entity<M,CN>>>
+        propSet?: PropSet<M, Entity<M,CN>, false>): Promise<Entity<M,CN> | null>
     {
         // check whether the class name is valid
         let classDef = this.schema.classes[className];
@@ -66,8 +66,7 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
 
         try
         {
-            let data = await this.dbAdapter.get(className, key, actPropSet);
-            return {success: true, data: data as Entity<M,CN>};
+            return await this.dbAdapter.get(className, key, actPropSet) as Entity<M,CN>;
         }
         catch (x)
         {
@@ -82,7 +81,7 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
      */
     async query(className: string, query?: AQuery): Promise<RepoQueryResponse<any>>
     {
-        return {success: true, data: {elms: []}};
+        return {elms: []};
     }
 
     /**
@@ -90,8 +89,21 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
      * @param className Name of class in the schema
      * @param propValues Values of properties to write to the object.
      */
-    async insert(className: string, propValues: Record<string,any>): Promise<void>
+    async insert<CN extends ModelClassName<M>>(className: CN, propValues: Entity<M,CN>): Promise<void>
     {
+        // check whether the class name is valid
+        let classDef = this.schema.classes[className];
+        if (!classDef)
+            RepoError.ClassNotFound(className);
+
+        try
+        {
+            await this.dbAdapter.insert(className, propValues);
+        }
+        catch (x)
+        {
+            RepoError.rethrow(x, "Adapter.get");
+        }
     }
 }
 

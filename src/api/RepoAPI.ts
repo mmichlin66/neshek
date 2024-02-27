@@ -1,14 +1,12 @@
-import { IRepoError } from "./RepoTypes";
-
-
-
-/** Represents an error that can be produced by repository functions. */
-export class RepoError extends Error implements IRepoError
+/**
+ * Represents an error that can be produced by repository functions.
+ */
+export class RepoError extends Error
 {
     /** Error code - even if it is numerical it should be represented as string */
     code: string;
 
-    /** Parameters adding value to the error code */
+    /** Parameters adding meaning to the error code */
     data?: string | Record<string,any>;
 
     constructor(code: string, data?: string | Record<string,any>, cause?: Error)
@@ -16,8 +14,8 @@ export class RepoError extends Error implements IRepoError
         let message = data == null
             ? code
             : typeof data === "string"
-                ? `${code}; ${data}`
-                : `${code}; ${JSON.stringify(data)}`
+                ? `${code}: ${data}`
+                : `${code}: ${JSON.stringify(data)}`
 
         super(message, cause ? {cause} : undefined);
         this.code = code;

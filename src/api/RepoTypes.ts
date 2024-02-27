@@ -3,41 +3,16 @@ import { PropSet, Query } from "./QueryTypes";
 
 
 
-/** Represents an error that can be produced by repository functions. */
-export interface IRepoError extends Error
-{
-    /** Error code - even if it is numerical it should be represented as string */
-    code?: string;
-}
-
-
-
-/**
- * Represents a generic response type returned by repository functions.
- * @typeParam T Type of returned data.
- */
-export type RepoResponse<T> = {
-    /**
-     * Flag indicating whether the operation was successful. If true, the `data` property will
-     * be present (although it can be null). If false, the `error` property will be present.
-     */
-    success: boolean;
-
-    /** Response data - only present if the `success` property is true. */
-    data?: T;
-
-    /** Operation error - only present if the `success` property is false. */
-    error?: IRepoError;
-}
-
-/** Represent response from the repository `get` operation. */
-export type RepoGetResponse<T> = RepoResponse<T | null>
-
 /** Represent response from the repository `query` operation. */
-export type RepoQueryResponse<T> = RepoResponse<{
+export type RepoQueryResponse<T> = {
+    /** Array of found elements of the given type */
     elms: T[];
+
+    /**
+     * Opaque string that can be used to retrieve more pages of query results.
+     */
     cursor?: string;
-}>
+}
 
 
 
@@ -80,7 +55,7 @@ export interface IRepoSession<M extends AModel>
      * @param propSet PropSet object indicating what properties to retrieve.
      */
     get<CN extends ModelClassName<M>>(className: CN, key: EntityKey<M,CN>,
-        propSet?: PropSet<M, Entity<M,CN>, false>): Promise<RepoGetResponse<Entity<M,CN>>>;
+        propSet?: PropSet<M, Entity<M,CN>, false>): Promise<Entity<M,CN> | null>;
 
     /**
      * Retrieves multiple objects by the given criteria.
@@ -95,7 +70,7 @@ export interface IRepoSession<M extends AModel>
      * @param className Name of class in the schema
      * @param propValues Values of properties to write to the object.
      */
-    insert<CN extends ModelClassName<M>>(className: CN, obj: Entity<AModel,CN>): Promise<void>
+    insert<CN extends ModelClassName<M>>(className: CN, propValues: Entity<M,CN>): Promise<void>
 }
 
 

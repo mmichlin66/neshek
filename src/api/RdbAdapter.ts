@@ -247,7 +247,7 @@ export abstract class RdbAdapter implements IDBAdapter
         // convert array of property names to map of property names to fields names
         let fieldNames = convertNamesPropsToFields(cls, propNames);
 
-        let obj = this.getObject(cls.table, keyFieldValues, fieldNames);
+        let obj = await this.getObject(cls.table, keyFieldValues, fieldNames);
         if (!obj)
             return null;
 
@@ -272,7 +272,7 @@ export abstract class RdbAdapter implements IDBAdapter
         // convert the object containing property names to one containing field names
         let fieldValues = convertValuesPropsToFields(cls, propValues);
 
-        this.insertObject(cls.table, fieldValues, keyFieldNames);
+        await this.insertObject(cls.table, fieldValues, keyFieldNames);
     }
 
     /**
