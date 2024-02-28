@@ -1,8 +1,14 @@
 /**
+ * Represents a property from the given object type. This allows skipping keys, which
+ * are either numbers or symbols.
+ */
+export type StringKey<T> = T extends object ? keyof T & string : never;
+
+/**
  * From the given object, extracts array of names of string keys. This allows skipping keys, which
  * are either numbers or symbols.
  */
-export type StringKeys<T> = (keyof T & string)[];
+export type StringKeys<T> = StringKey<T>[];
 
 /**
  * Magic incantation necessary for the {@link XOR} type to work. Returns `keyof T`

@@ -68,7 +68,7 @@ export type RdbSchemaHints<M extends AModel> = ARdbSchemaHints &
     fieldTypeFunc?: <T>(propDef: PropDef<M,T>) => string;
 
     /** Hints for individual classes */
-    classes?: { [CN in ModelClassName<M>]?: RDBClassHints<M,CN>}
+    classes?: { [CN in ModelClassName<M>]?: RdbClassHints<M,CN>}
 }
 
 
@@ -81,7 +81,7 @@ export type ARdbClassHints =
 {
     /**
      * Name of the table to keep class instances. If this property is undefined, the table name
-     * will be determined either by calling the function from the {@RDBSchemaHints} definition
+     * will be determined either by calling the function from the {@link RdbSchemaHints} definition
      * or, if the latter is undefined too, equal to the class name.
      */
     tableName?: string;
@@ -94,7 +94,7 @@ export type ARdbClassHints =
  * Represents information on how the class structure from the model should be applied to a
  * relational data base.
  */
-export type RDBClassHints<M extends AModel, CN extends ModelClassName<M>> = ARdbClassHints &
+export type RdbClassHints<M extends AModel, CN extends ModelClassName<M>> = ARdbClassHints &
 {
     /** Hints for individual properties */
     props?: { [PN in EntityPropName<M,CN>]?: RdbPropHints<M, Entity<M,CN>[PN]> }

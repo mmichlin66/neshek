@@ -7,7 +7,6 @@ import {
     ARdbSchemaHints, ARdbClassHints, ARdbLinkPropHints, RdbScalarPropHints, RdbClass, RdbLinkField,
     RdbProp, RdbSchema
 } from "./RdbTypes";
-import { APropSet } from "./QueryTypes";
 import { RepoError } from "./RepoAPI";
 
 
@@ -444,8 +443,10 @@ function getPropFromClass(cls: RdbClass, propName: string): RdbProp
 
 
 
-/** Represents an error that can be produced by repository functions. */
-export class RdbError
+/**
+ * Provides static functions creating RDB-specific errors.
+ */
+export abstract class RdbError
 {
     static ObjectAlreadyExists(tableName: string, key: any): never
         { throw new RepoError( "OBJECT_ALREADY_EXISTS", {tableName, key}); }

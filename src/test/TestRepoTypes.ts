@@ -27,7 +27,7 @@ let product = await session.get("Product", {code: "123"}, {
 });
 
 let product1 = await session.get("Product", {code: "123"}, {
-    fields: ["msrp"],
+    _: ["msrp"],
     // notes: {
     //     props: ["text", "time"],
     //     limit: 3,
@@ -41,7 +41,7 @@ let product1 = await session.get("Product", {code: "123"}, {
 let product12 = session.get("Product", {id: "123"});
 
 let product3 = await session.get("Product", {code: "123"}, {
-    fields: "msrp",
+    _: "msrp",
     // notes: "text, time",
 });
 
