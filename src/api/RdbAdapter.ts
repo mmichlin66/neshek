@@ -2,7 +2,7 @@ import { ScalarType } from "./ModelTypes";
 import {
     AClassDef, APropDef, ASchemaDef, ALinkPropDef, StringPropDef, BoolPropDef, IntPropDef
 } from "./SchemaTypes";
-import { IDBAdapter } from "./DBTypes";
+import { AObject, IDBAdapter } from "./DBTypes";
 import {
     ARdbSchemaHints, ARdbClassHints, ARdbLinkPropHints, RdbScalarPropHints, RdbClass, RdbLinkField,
     RdbProp, RdbSchema
@@ -233,7 +233,7 @@ export abstract class RdbAdapter implements IDBAdapter
      * @param key Object with primary key property values
      * @param propSet Array of property names to retrieve.
      */
-    async get(className: string, key: Record<string,any>, propSet: APropSet): Promise<Record<string,any> | null>
+    async get(className: string, key: AObject, propNames: string[]): Promise<AObject | null>
     {
         // get the class object
         let cls = getClassFromSchema(this.rdbSchema, className);
@@ -241,18 +241,16 @@ export abstract class RdbAdapter implements IDBAdapter
         // convert the key object containing property names to one containing field names
         let keyFieldValues = convertValuesPropsToFields(cls, key);
 
-        // get the list of fields from the PropSet.
-        let propNames = getPropNamesFromPropSet(cls, propSet);
-
         // convert array of property names to map of property names to fields names
         let fieldNames = convertNamesPropsToFields(cls, propNames);
 
-        let obj = await this.getObject(cls.table, keyFieldValues, fieldNames);
-        if (!obj)
+        // bring values of the fields in the class's table
+        let fieldValues = await this.getObject(cls.table, keyFieldValues, fieldNames);
+        if (!fieldValues)
             return null;
 
-        // convert object containing field names to obe containing property names
-        return convertValuesFieldsToProps(cls, propNames, obj);
+        // convert object containing field names to one containing property names
+        return convertValuesFieldsToProps(cls, propNames, fieldValues);
     }
 
     /**
@@ -260,7 +258,7 @@ export abstract class RdbAdapter implements IDBAdapter
      * @param className Name of class in the schema
      * @param propValues Values of properties to write to the object.
      */
-    async insert(className: string, propValues: Record<string,any>): Promise<void>
+    async insert(className: string, propValues: AObject): Promise<void>
     {
         // get the class object
         let cls = getClassFromSchema(this.rdbSchema, className);
@@ -282,7 +280,7 @@ export abstract class RdbAdapter implements IDBAdapter
      * @param fieldNames Names of the fields to retrieve.
      */
     protected abstract getObject(tableName: string, keyFieldValues: Record<string,ScalarType>,
-        fieldNames: string[]): Promise<Record<string,any> | null>;
+        fieldNames: string[]): Promise<AObject | null>;
 
 
 
@@ -292,39 +290,12 @@ export abstract class RdbAdapter implements IDBAdapter
      * @param propValues Values of fields to write to the object.
      * @param keyFieldNames Array of field names constituting the object key.
      */
-    protected abstract insertObject(tableName: string, fieldValues: Record<string,any>,
+    protected abstract insertObject(tableName: string, fieldValues: AObject,
         keyFieldNames: string[]): Promise<void>;
 }
 
 
 
-
-/**
- * Returns a flat array of property names from the given PropSet. If this is already an array of
- * names, return it as is; otherwise (if it is an object form of the PropSet), return an array of
- * its keys. If it is a string, then it should be comma-separated list of property names.
- */
-function getPropNamesFromPropSet(cls: RdbClass, propSet: APropSet): string[]
-{
-    if (typeof propSet === "string")
-    {
-        // split the string into property names and check that the names are valid
-        let propNames = propSet.split(/[\s,;]+/);
-        let result: string[] = [];
-        for (let propName of propNames)
-        {
-            let prop = cls.props[propName];
-            if (!prop)
-                RepoError.PropNotFound(cls.name, propName);
-            else if (prop.propDef.dt !== "multilink")
-                result.push(propName);
-        }
-
-        return result;
-    }
-    else
-        return Array.isArray(propSet) ? propSet : Object.keys(propSet);
-}
 
 /**
  * For the given class, converts every property name in the array to the corresponding field
@@ -355,7 +326,7 @@ function convertNamesPropsToFields(cls: RdbClass, propNames: string[]): string[]
  * Converts an object with entity properties and their values to an object mapping field names
  * to the values.
  */
-function convertValuesPropsToFields(cls: RdbClass, propValues: Record<string,any>): Record<string,any>
+function convertValuesPropsToFields(cls: RdbClass, propValues: AObject): AObject
 {
     let fieldValues: Record<string,ScalarType> = {}
     for (let propName in propValues)
@@ -403,9 +374,9 @@ function convertValuesPropsToFields(cls: RdbClass, propValues: Record<string,any
  * to the values.
  */
 function convertValuesFieldsToProps(cls: RdbClass, propNames: string[],
-    fieldValues: Record<string,any>): Record<string,any>
+    fieldValues: AObject): AObject
 {
-    let propValues: Record<string,any> = {};
+    let propValues: AObject = {};
     for (let propName of propNames)
     {
         // get the field description; if undefined, it's a multi-link and we just skip it.
@@ -421,16 +392,18 @@ function convertValuesFieldsToProps(cls: RdbClass, propNames: string[],
             {
                 // follow chain of property names defined for the field to build the proper
                 // chain of objects until the field value for the last property in the chain.
+                // `nextProp` will point to the current object in the hierarchy as we go down the
+                // chain. When `i` equals zero, that means we reached the last property in the
+                // chain.
                 let propChain = fieldOrFields[fieldName].propChain;
                 let nextProp = propValues;
                 let i = propChain.length - 1;
                 for (let propInChain of propChain)
                 {
-                    if (i > 0)
-                    {
-                        nextProp = nextProp[propInChain] = {}
-                        i--;
-                    }
+                    // if we are not at the last property in the chain, we need to move down the
+                    // hierarchy, creating new objects if necessary
+                    if (i-- > 0)
+                        nextProp = propInChain in nextProp ? nextProp[propInChain] : nextProp[propInChain] = {};
                     else
                         nextProp[propInChain] = fieldValues[fieldName];
                 }

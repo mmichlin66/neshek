@@ -37,6 +37,20 @@ export async function testDBRepository_insert_get(): Promise<void>
         console.log(x);
     }
 
+    extraItemInfo = await repoSession.get("ExtraItemInfo", {item: {product: {code: "123"}, order: {id: 123}}}, {
+        comments: undefined,
+        item: {
+            product: "msrp",
+            order: {
+                time: undefined,
+                id: undefined,
+            }
+        }
+    });
+
+    extraItemInfo = await repoSession.get("ExtraItemInfo", {item: {product: {code: "123"}, order: {id: 123}}},
+        ["comments", "item"]);
+
     console.log("Finished");
 }
 

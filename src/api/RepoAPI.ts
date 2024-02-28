@@ -22,17 +22,24 @@ export class RepoError extends Error
         this.data = data;
     }
 
-    static rethrow(x: any, source: string): never
+    static rethrow(x: unknown, data?: string | Record<string,any>): never
     {
         if (x instanceof RepoError)
             throw x;
         else if (x instanceof Error)
-            RepoError.Unhandled({source}, x);
+            RepoError.Unhandled(data, x);
         else
-            RepoError.Unhandled({source, causedBy: x});
+        {
+            let actData =
+                data == null ? {causedBy: x} :
+                typeof data === "string" ? {data, causedBy: x} :
+                {...data, causedBy: x}
+
+            RepoError.Unhandled(actData);
+        }
     }
 
-    static Unhandled(data: string | Record<string,any>, cause?: Error): never
+    static Unhandled(data?: string | Record<string,any>, cause?: Error): never
         { throw new RepoError( "UNHANDLED", data, cause); }
     static ClassNotFound(className: string): never
         { throw new RepoError( "CLASS_NOT_FOUND", {className}); }

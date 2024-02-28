@@ -1,11 +1,11 @@
-import { RdbAdapter, RdbError, ScalarType } from "../index"
+import { AObject, RdbAdapter, RdbError, ScalarType } from "../index"
 
 
 
 export class SampleRdbAdapter extends RdbAdapter
 {
     // Map from class names to a map from flattenned object keys to objects
-    private objects = new Map<string, Map<string, Record<string,any>> | undefined>();
+    private objects = new Map<string, Map<string, AObject> | undefined>();
 
 
 
@@ -20,7 +20,7 @@ export class SampleRdbAdapter extends RdbAdapter
      * Retrieves the requested fields of the object from the given table identified by the given key.
      */
     protected async getObject(tableName: string, keyFieldValues: Record<string,ScalarType>,
-        fieldNames: string[]): Promise<Record<string,any> | null>
+        fieldNames: string[]): Promise<AObject | null>
     {
         let map = this.objects.get(tableName);
         if (!map)
@@ -47,7 +47,7 @@ export class SampleRdbAdapter extends RdbAdapter
         keyFieldNames: string[]): Promise<void>
     {
         // create key object
-        let keyFieldValues: Record<string,any> = {};
+        let keyFieldValues: AObject = {};
         for (let keyFieldName of keyFieldNames)
             keyFieldValues[keyFieldName] = fieldValues[keyFieldName];
 
@@ -56,7 +56,7 @@ export class SampleRdbAdapter extends RdbAdapter
         let map = this.objects.get(tableName);
         if (!map)
         {
-            map = new Map<string, Record<string,any>>();
+            map = new Map<string, AObject>();
             this.objects.set(tableName, map);
         }
         else

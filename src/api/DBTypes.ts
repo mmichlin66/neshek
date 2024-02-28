@@ -1,5 +1,14 @@
 import { APropSet } from "./QueryTypes";
 
+
+
+/**
+ * Convenience type representing an object with string keys and `any' value types.
+ */
+export type AObject = Record<string,any>;
+
+
+
 /**
  * Represents an adapter that knows to work with a database implementation. Neshek Repository
  * object calls methods of this interface to read from and write to the database.
@@ -19,9 +28,9 @@ export interface IDBAdapter
      * @param key Object with primary key property values
      * @param props Array of property names to retrieve.
      */
-    get(className: string, key: Record<string,any>, propSet: APropSet): Promise<Record<string,any> | null>;
+    get(className: string, key: AObject, propNames: string[]): Promise<AObject | null>;
 
-    insert(className: string, propValues: Record<string,any>): Promise<void>;
+    insert(className: string, propValues: AObject): Promise<void>;
 
 }
 

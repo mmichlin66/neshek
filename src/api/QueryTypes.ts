@@ -19,26 +19,16 @@ import { StringKeys } from "./UtilTypes";
  *     - a single value - specifies the *equal* filter.
  *     - tuple with two values - specifies the *between* filter (if allowed by the property type).
  *     - an array of filter objects.
- * - Structure property:
- *   - `undefined` - this simply indicates that the structure should be retrieved with all its
+ * - Single link property:
+ *   - `undefined` - this simply indicates that the linked object should be retrieved with all its
  *     scalar properties.
- *   - Array of structure property names - the properties will be retrieved with default settings.
+ *   - Array of linked class property names - the properties will be retrieved with default settings.
  *   - String with comma-separated structure property names - the properties will be retrieved with
  *     default settings. Note that there is no type checking of the property names.
- *   - Object with structure property names as keys. This allows specifying options for each
- *     included property.
+ *   - Object with linked class property names as keys. This allows specifying options for each
+ *     included property recursively.
  *   - If filters are allowed, the property can specify:
  *     - null - to indicate the "doesn't exist" filter
- *
- * For each property the following information is specified:
- * - scalar properties: boolean that determines whether to return this property if it is null
- *   in the repository. If the property has value in the repository, it will be returned no matter
- *   whether true or false is specified. If the property is null in the repository, `false` means
- *   that the response will not contain this property at all; `true` means that the response will
- *   contain this property with the null value.
- * - Structure or Single Link: `PropSet` of the corresponding type
- * - Array or Multi Link: Query of the corresponding type, which may define filters and other
- *   parameters determining how the array elements or linked objects are returned.
  *
  * @typeParam M Model describing all available classes of objects
  * @typeParam T Type whose retrieval options are specified. The type can be any allowed in the

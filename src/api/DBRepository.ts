@@ -2,7 +2,7 @@ import { AModel, Entity, EntityKey, ModelClassName } from "./ModelTypes"
 import { AClassDef, SchemaDef } from "./SchemaTypes";
 import { APropSet, AQuery, PropSet} from "./QueryTypes";
 import { IRepoSession, IRepository, RepoQueryResponse, RepoSessionOptions } from "./RepoTypes";
-import { IDBAdapter } from "./DBTypes";
+import { AObject, IDBAdapter } from "./DBTypes";
 import { RepoError } from "./RepoAPI";
 
 
@@ -56,23 +56,66 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
     async get<CN extends ModelClassName<M>>(className: CN, key: EntityKey<M,CN>,
         propSet?: PropSet<M, Entity<M,CN>, false>): Promise<Entity<M,CN> | null>
     {
+        try
+        {
+            return await this.getR(className, key, propSet) as Entity<M,CN>;
+        }
+        catch (x)
+        {
+            RepoError.rethrow(x, {source: "Adapter.get"});
+        }
+    }
+
+    /**
+     * Recursively retrieves an object of the given class with the properties indicated by the
+     * given PropSet. Calls itself for linked objects.
+     */
+    private async getR(className: string, key: AObject, propSet?: APropSet): Promise<AObject | null>
+    {
         // check whether the class name is valid
         let classDef = this.schema.classes[className];
         if (!classDef)
             RepoError.ClassNotFound(className);
 
-        // if PropSet is undefined, create default PropSet for the given class
-        let actPropSet: APropSet = propSet ?? generateDefaultPropSet(classDef);
+        // if PropSet is undefined create default PropSet for the given class
+        if (!propSet)
+            propSet = generateDefaultPropSet(classDef);
 
-        try
+        // get the list of top-level properties from the PropSet.
+        let propNames = getPropNamesFromPropSet(className, classDef, propSet);
+
+        // retrieve values of the top-level properties. This includes the keys of the linked
+        // objects
+        let obj = await this.dbAdapter.get(className, key, propNames);
+        if (!obj)
+            return null;
+
+        // for a hierarchical PropSet, go over its top-level properties and check whether we have
+        // single links. By now we have keys for every single link. Check whether we have nested
+        // PropSet for these links.
+        if (typeof propSet === "object")
         {
-            return await this.dbAdapter.get(className, key, actPropSet) as Entity<M,CN>;
+            for (let propName in obj)
+            {
+                let propDef = classDef.props[propName];
+                if (propDef.dt === "link")
+                {
+                    let nestedPropSet = propSet[propName];
+                    if (nestedPropSet)
+                    {
+                        // `obj[propName] is the key of the nested object
+                        let nestedObj = await this.getR(propDef.target, obj[propName], nestedPropSet);
+                        if (nestedObj)
+                            obj[propName] = nestedObj;
+                    }
+                }
+            }
         }
-        catch (x)
-        {
-            RepoError.rethrow(x, "Adapter.get");
-        }
-    }
+
+        return obj;
+}
+
+
 
     /**
      * Retrieves multiple objects by the given criteria.
@@ -83,6 +126,8 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
     {
         return {elms: []};
     }
+
+
 
     /**
      * Inserts a new object of the given class with the given field values.
@@ -102,7 +147,7 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
         }
         catch (x)
         {
-            RepoError.rethrow(x, "Adapter.get");
+            RepoError.rethrow(x, {source: "Adapter.insert"});
         }
     }
 }
@@ -127,3 +172,33 @@ function generateDefaultPropSet(classDef: AClassDef): APropSet
 
     return propNames;
 }
+
+/**
+ * Returns a flat array of property names from the given PropSet. If this is already an array of
+ * names, return it as is; otherwise (if it is an object form of the PropSet), return an array of
+ * its keys. If it is a string, then it should be comma-and-space-separated list of property names.
+ */
+function getPropNamesFromPropSet(className: string, classDef: AClassDef, propSet: APropSet): string[]
+{
+    if (typeof propSet === "string")
+    {
+        // split the string into property names and check that the names are valid
+        let propNames = propSet.split(/[\s,;]+/);
+        let result: string[] = [];
+        for (let propName of propNames)
+        {
+            let propDef = classDef.props[propName];
+            if (!propDef)
+                RepoError.PropNotFound(className, propName);
+            else if (propDef.dt !== "multilink")
+                result.push(propName);
+        }
+
+        return result;
+    }
+    else
+        return Array.isArray(propSet) ? propSet : Object.keys(propSet);
+}
+
+
+
