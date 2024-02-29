@@ -9,11 +9,11 @@ import { StringKey, StringKeys } from "./UtilTypes";
  * and single and multi links. Information is specified differently for each of these types and
  * this also depends on the value of the `TAllowFilters` type parameter (which can only be `true`
  * or `false`).
- * 
+ *
  * The **PropSet** is a hierarchical structure because for single and multi link properties it
  * allows specifying nested PropSet structures. For the `get` operation, the `T` type parameter
  * indicates the type of the `Entity` corresponding to a class from the model.
- * 
+ *
  * The `TAllowFilters` type parameter determines whether the PropSet can specify filters on scalar
  * and single link properties. Filters are not allowed for top-level classes and only in the `get`
  * operation (because the only "filter" is either primary key or unique constraint). For the
@@ -23,29 +23,33 @@ import { StringKey, StringKeys } from "./UtilTypes";
  *   - If filters are not allowed, the property can only be defined as `undefined`. This simply
  *     indicates that the property should be retrieved.
  *   - If filters are allowed, the property can specify filtering options. These filters will be
- *     added to the filter (if any) on the query type up the hierarhy chain. The filters can be
- *     specified in one of the following ways:
- *     - a single value - specifies the *equal* filter.
- *     - tuple with two values - specifies the *between* filter (if allowed by the property type).
- *     - an array of filter objects.
+ *     added to the filter (if any) on the query type up the hierarhy chain.
  * - Single link property:
- *   - `undefined` or "*" - indicates that the linked object should be retrieved with all its
- *     default properties.
- *   - Array of linked class property names - the properties will be retrieved with default settings.
- *   - String with comma-separated structure property names - the properties will be retrieved with
- *     default settings. Note that there is no type checking of the property names.
- *   - Object with linked class property names as keys. This allows specifying options for each
- *     included property recursively.
+ *   - `undefined` - indicates that only the primary key property(ies) of the the linked object
+ *     should be retrieved.
+ *   - "*" - indicates that all the default properties of the linked object should be retrieved.
+ *   - Array of linked class's property names - the properties will be retrieved with default
+ *     settings.
+ *   - PropSet object with linked class property names as keys. This allows specifying options for
+ *     each included property recursively. This object can include a special `"_"` (underscore)
+ *     property, which can specify array of linked class's property names. Property names
+ *     appearring in this array, can also appear as fields of the PropSet object. The latter
+ *     allows overriding how the properties are retrieved.
  * - Multi link property:
- *   - `undefined` or "*" - indicates that all linked objects should be retrieved with all their
- *     default properties. This implies no filtering, no sorting and default limit on the number
+ *   - `undefined` - indicates that only the primary key property(ies) of the the linked objects
+ *     should be retrieved. This implies no filtering, no sorting and default limit on the number
  *     of linked objects retrieved.
+ *   - "*" - indicates that all the default properties of the linked objects should be retrieved.
+ *     This implies no filtering, no sorting and default limit on the number of linked objects
+ *     retrieved.
  *   - Array of linked class property names - the properties will be retrieved with default settings.
  *     This implies no filtering, no sorting and default limit on the number of linked objects
  *     retrieved.
- *   - String with comma-separated structure property names - the properties will be retrieved with
- *     default settings. This implies no filtering, no sorting and default limit on the number of
- *     linked objects retrieved. Note that there is no type checking of the property names.
+ *   - PropSet object with linked class property names as keys. This allows specifying options for
+ *     each included property recursively. This object can include a special `"_"` (underscore)
+ *     property, which can specify array of linked class's property names. Property names
+ *     appearring in this array, can also appear as fields of the PropSet object. The latter
+ *     allows overriding how the properties are retrieved.
  *   - {@link Query} object that specifies filtering and sorting in addition to options for each included
  *     property recursively.
  *
@@ -66,7 +70,7 @@ export type PropSet<M extends AModel, T, TAllowFilters extends boolean> =
                         ? TAllowFilters extends true ? T[P] | undefined : undefined
                         : PropSet<M, T[P], TAllowFilters>
             } &
-            { _?: StringKeys<T> | StringKey<T> }
+            { _?: StringKey<T> | StringKeys<T> | "*" }
          ) :
     never;
 
@@ -83,7 +87,7 @@ export type AQuery =
 {
     filters?: string;
     sort?: string;
-    propSet?: APropSet;
+    props?: APropSet;
     limit?: number;
     cursor?: string;
 }

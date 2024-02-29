@@ -63,6 +63,13 @@ export async function testDBRepository_insert_get(): Promise<void>
         }
     });
 
+    extraItemInfo = await repoSession.get("ExtraItemInfo", {item: {product: {code: "123"}, order: {id: 123}}}, {
+        _: "*",
+        item: {
+            product: ["msrp", "name"],
+        }
+    });
+
     console.log("Finished");
 }
 

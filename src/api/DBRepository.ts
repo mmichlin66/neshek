@@ -162,7 +162,7 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
  * Generates a PropSet that contains names of the scalar and single link properties of the given
  * class.
  */
-function generateDefaultPropSet(classDef: AClassDef): APropSet
+function generateDefaultPropSet(classDef: AClassDef): string[]
 {
     // include all class properties except multi-links and those explicitly excluded in the
     // schema
@@ -185,47 +185,58 @@ function generateDefaultPropSet(classDef: AClassDef): APropSet
 function getPropNamesFromPropSet(className: string, classDef: AClassDef, propSet: APropSet): string[]
 {
     if (typeof propSet === "string")
-        return getPropNamesFromString(className, classDef, propSet);
+        return [propSet];
     else if (Array.isArray(propSet))
         return propSet;
     else
     {
         // we have an object form of propSet where each key is a class property; plus
         // we can have a special "_" key, which simply lists property names.
-        let result = Object.keys(propSet).filter(key => key !== "_");
+        let result: string[];
         if ("_" in propSet)
         {
-            let props = propSet._;
-            if (typeof props === "string")
-                return getPropNamesFromString(className, classDef, props);
-            else if (Array.isArray(props))
-                return props;
+            let props = propSet._ as string | string[];
+            if (props === "*")
+                result = generateDefaultPropSet(classDef);
+            else if (typeof props === "string")
+                result = generateDefaultPropSet(classDef);
+            else
+                result = props;
+        }
+        else
+            result = [];
+
+        // go over keys in the propSet and add those that don't yet appear in the result array
+        for (let propName in propSet)
+        {
+            if (propName !== "_" && result.indexOf(propName) < 0)
+                result.push(propName);
         }
 
         return result;
     }
 }
 
-/**
- * Extracts an array of property names from the given string, which is a comma-and-space-separated
- * list of property names.
- */
-function getPropNamesFromString(className: string, classDef: AClassDef, s: string): string[]
-{
-    // split the string into property names and check that the names are valid
-    let propNames = s.split(/[\s,;]+/);
-    let result: string[] = [];
-    for (let propName of propNames)
-    {
-        let propDef = classDef.props[propName];
-        if (!propDef)
-            RepoError.PropNotFound(className, propName);
-        else if (propDef.dt !== "multilink")
-            result.push(propName);
-    }
+// /**
+//  * Extracts an array of property names from the given string, which is a comma-and-space-separated
+//  * list of property names.
+//  */
+// function getPropNamesFromString(className: string, classDef: AClassDef, s: string): string[]
+// {
+//     // split the string into property names and check that the names are valid
+//     let propNames = s.split(/[\s,;]+/);
+//     let result: string[] = [];
+//     for (let propName of propNames)
+//     {
+//         let propDef = classDef.props[propName];
+//         if (!propDef)
+//             RepoError.PropNotFound(className, propName);
+//         else if (propDef.dt !== "multilink")
+//             result.push(propName);
+//     }
 
-    return result;
-}
+//     return result;
+// }
 
 
 
