@@ -1,6 +1,6 @@
 import { AModel, Entity, EntityKey, ModelClassName } from "./ModelTypes"
 import { AClassDef, SchemaDef } from "./SchemaTypes";
-import { APropSet, AQuery, PropSet} from "./QueryTypes";
+import { APropSet, AQuery, PropSet, Query} from "./QueryTypes";
 import { IRepoSession, IRepository, RepoQueryResponse, RepoSessionOptions } from "./RepoTypes";
 import { AObject, IDBAdapter } from "./DBTypes";
 import { RepoError } from "./RepoAPI";
@@ -105,9 +105,10 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
                     let nestedPropSet = propSet[propName];
                     if (nestedPropSet === "*")
                         nestedPropSet = generateDefaultPropSet(this.schema.classes[propDef.target]);
+
                     if (nestedPropSet)
                     {
-                        // `obj[propName] is the key of the nested object
+                        // obj[propName] is the key of the nested object
                         let nestedObj = await this.getR(propDef.target, obj[propName], nestedPropSet);
                         if (nestedObj)
                             obj[propName] = nestedObj;
@@ -123,10 +124,11 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
 
     /**
      * Retrieves multiple objects by the given criteria.
-     * @param className
-     * @param query
+     * @param className Name of class in the model.
+     * @param query Criteria for retrieving objects.
      */
-    async query(className: string, query?: AQuery): Promise<RepoQueryResponse<any>>
+    async query<CN extends ModelClassName<M>>(className: CN,
+        query?: Query<M, Entity<M,CN>>): Promise<RepoQueryResponse<Entity<M,CN>>>
     {
         return {elms: []};
     }

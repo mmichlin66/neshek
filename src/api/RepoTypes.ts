@@ -50,8 +50,8 @@ export interface IRepoSession<M extends AModel>
     /**
      * Retrieves an instance of the given class using the given primary key or unique constraint
      * and return values of the given set of properties.
-     * @param className Name of class in the schema
-     * @param key Object with primary key property values
+     * @param className Name of class in the model.
+     * @param key Object with primary key property values.
      * @param propSet PropSet object indicating what properties to retrieve.
      */
     get<CN extends ModelClassName<M>>(className: CN, key: EntityKey<M,CN>,
@@ -59,15 +59,15 @@ export interface IRepoSession<M extends AModel>
 
     /**
      * Retrieves multiple objects by the given criteria.
-     * @param className
-     * @param query
+     * @param className Name of class in the model.
+     * @param query Criteria for retrieving objects.
      */
     query<CN extends ModelClassName<M>>(className: CN,
         query?: Query<M, Entity<M,CN>>): Promise<RepoQueryResponse<Entity<M,CN>>>;
 
     /**
      * Inserts a new object of the given class with the given field values.
-     * @param className Name of class in the schema
+     * @param className Name of class in the model.
      * @param propValues Values of properties to write to the object.
      */
     insert<CN extends ModelClassName<M>>(className: CN, propValues: Entity<M,CN>): Promise<void>

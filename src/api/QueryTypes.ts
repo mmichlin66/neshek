@@ -85,7 +85,7 @@ export type APropSet = string | string[] | Record<string, any>;
  */
 export type AQuery =
 {
-    filters?: string;
+    filter?: string;
     sort?: string;
     props?: APropSet;
     limit?: number;
@@ -99,11 +99,11 @@ export type AQuery =
  *
  * @typeParam M Model describing all available classes of objects
  * @typeParam T Type whose retrieval options are specified. The type can be any allowed in the
- * `PropType` type, including scalars, structs, arrays and single and multi links.
+ * `PropType` type, including scalars, structs, arrays and single links.
  */
 export type Query<M extends AModel, T> = AQuery &
 {
-    filters?: string;
+    filter?: string;
     sort?: string;
     propSet?: PropSet<M, T, true>;
     limit?: number;

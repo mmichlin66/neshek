@@ -8,6 +8,8 @@ import {
     RdbProp, RdbSchema
 } from "./RdbTypes";
 import { RepoError } from "./RepoAPI";
+import { AQuery } from "./QueryTypes";
+import { RepoQueryResponse } from "./RepoTypes";
 
 
 
@@ -228,8 +230,8 @@ export abstract class RdbAdapter implements IDBAdapter
     /**
      * Retrieves an instance of the given class using the given primary key or unique constraint
      * and return values of the given set of properties.
-     * @param className Name of class in the schema
-     * @param key Object with primary key property values
+     * @param className Name of class in the model.
+     * @param key Object with primary key property values.
      * @param propSet Array of property names to retrieve.
      */
     async get(className: string, key: AObject, propNames: string[]): Promise<AObject | null>
@@ -253,8 +255,18 @@ export abstract class RdbAdapter implements IDBAdapter
     }
 
     /**
+     * Retrieves multiple objects by the given criteria.
+     * @param className Name of class in the model.
+     * @param query Criteria for retrieving objects.
+     */
+    async query(className: string, query?: AQuery): Promise<RepoQueryResponse<AObject>>
+    {
+        return {elms: []}
+    }
+
+    /**
      * Inserts a new object of the given class with the given field values.
-     * @param className Name of class in the schema
+     * @param className Name of class in the model.
      * @param propValues Values of properties to write to the object.
      */
     async insert(className: string, propValues: AObject): Promise<void>
