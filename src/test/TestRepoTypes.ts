@@ -48,7 +48,7 @@ let product3 = await session.get("Product", {code: "123"}, {
 let order = session.get("Order", {id: 123}, {
     id: undefined,
     items: {
-        propSet: {
+        props: {
             price: 2 // filters items with price = 2
         }
     },
@@ -81,6 +81,9 @@ let extraItemInfo = session.get("ExtraItemInfo", {item: {order: {id: 123}, produ
 
 // @ts-expect-error (Note is not a class)
 let note = session.get("Note", {id: 123});
+
+let items = session.query("Item", {filter: item => item.price.$eq(item.product.msrp)});
+items = session.query("Item", {filter: item => item.price.$eq(9.95)});
 
 
 
