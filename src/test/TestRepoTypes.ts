@@ -38,14 +38,14 @@ let product1 = await session.get("Product", {code: "123"}, {
 });
 
 // @ts-expect-error (id is not primary key)
-let product12 = session.get("Product", {id: "123"});
+let product12 = await session.get("Product", {id: "123"});
 
 let product3 = await session.get("Product", {code: "123"}, {
     _: "msrp",
     // notes: "text, time",
 });
 
-let order = session.get("Order", {id: 123}, {
+let order = await session.get("Order", {id: 123}, {
     id: undefined,
     items: {
         props: {
@@ -57,9 +57,9 @@ let order = session.get("Order", {id: 123}, {
     a: undefined,
 });
 
-let order1 = session.get("Order", {id: 123}, ["id", "items"]);
+let order1 = await session.get("Order", {id: 123}, ["id", "items"]);
 
-let item = session.get("Item", {order: {id: 123}, product: {code: "123"}}, {
+let item = await session.get("Item", {order: {id: 123}, product: {code: "123"}}, {
     order: {
         id: undefined,
     },
@@ -72,18 +72,19 @@ let item = session.get("Item", {order: {id: 123}, product: {code: "123"}}, {
     a: undefined,
 });
 
-let item1 = session.get("Item", {order: {id: 123}, product: {code: "123"}}, ["order", "product", "price"]);
+let item1 = await session.get("Item", {order: {id: 123}, product: {code: "123"}}, ["order", "product", "price"]);
 
 // @ts-expect-error (id is not primary key)
-let item2 = session.get("Item", {order: {id: 123}, product: {id: "123"}});
+let item2 = await session.get("Item", {order: {id: 123}, product: {id: "123"}});
 
-let extraItemInfo = session.get("ExtraItemInfo", {item: {order: {id: 123}, product: {code: "123"}}});
+let extraItemInfo = await session.get("ExtraItemInfo", {item: {order: {id: 123}, product: {code: "123"}}});
 
 // @ts-expect-error (Note is not a class)
-let note = session.get("Note", {id: 123});
+let note = await session.get("Note", {id: 123});
 
-let items = session.query("Item", {filter: item => item.price.$eq(item.product.msrp)});
-items = session.query("Item", {filter: item => item.price.$eq(9.95)});
+let items = await session.query("Item", {filter: item => item.price.$eq(item.product.msrp)});
+items = await session.query("Item", {filter: item => item.price.$eq(9.95)});
+items = await session.query("Item", {filter: item => item.order.$isDefined()});
 
 
 

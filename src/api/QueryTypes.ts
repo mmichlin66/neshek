@@ -1,4 +1,4 @@
-import { ScalarType, MultiLink, AModel, NameOfClass, Entity, EntityPropName, ModelClassName } from "./ModelTypes"
+import { ScalarType, MultiLink, AModel, NameOfClass, Entity, EntityPropName } from "./ModelTypes"
 import { StringKey, StringKeys } from "./UtilTypes";
 
 
@@ -80,17 +80,7 @@ export type PropSet<M extends AModel, T, TAllowFilters extends boolean> =
  */
 export type APropSet = string | string[] | Record<string, any>;
 
-/**
- * Represents a general non-templated structure of a query for a collection of objects.
- */
-export type AQuery =
-{
-    filter?: (obj: object) => FilterBase;
-    sort?: string;
-    props?: APropSet;
-    limit?: number;
-    cursor?: string;
-}
+
 
 /**
  * Represents a query for a collection of objects of the given type, which lists filters and
@@ -109,11 +99,70 @@ export type Query<M extends AModel, E extends Entity<M,string>> =
      * names that should be filtered. Note that this is not a real object from the repository - it
      * is an ethemeral object only used to produce property names in a type safe manner.
      */
-    filter?: (obj: FilteredEntity<M,E>) => FilterBase;
+    filter?: (obj: EnhancedEntity<M,E>) => AFilterBase;
     sort?: string;
     props?: PropSet<M, E, true>;
     limit?: number;
     cursor?: string;
+}
+
+/**
+ * Represents a general non-templated structure of a query for a collection of objects.
+ */
+export type AQuery =
+{
+    filter?: (obj: object) => AFilterBase;
+    sort?: string;
+    props?: APropSet;
+    limit?: number;
+    cursor?: string;
+}
+
+
+
+/**
+ * Represent a base type from which all filters derive. It defines the filtering operation and an
+ * optional "enhanced" property. Filters can be applied to either an entity or to a specific
+ * property. In the latter case, the filter doesn't need to define the property because the
+ * property the filter works on is determined based on the property it is applied to. In the former
+ * case, that is, when a filter is applied to an entity, the filter itself defines the property, to
+ * which it applies.
+ */
+export type FilterBase<O extends string> =
+{
+    /**
+     * Filtering operation. Each derived filter type restricts this string type to a pre-defined
+     * set of known values.
+     */
+    op: O;
+
+    /**
+     * Optional property specification represented as an array of property names following a path
+     * starting from the entity class being filtered.
+     */
+    propPath?: string[];
+}
+
+/**
+ * Represents a general non-templated structure of a base filter object.
+ */
+export type AFilterBase = FilterBase<string>;
+
+export type NoArgFilter<O extends string> = FilterBase<O>
+
+export type OneArgFilter<O extends string, T extends ScalarType> = FilterBase<O> &
+{
+    /** Single argument */
+    arg: T;
+}
+
+export type TwoArgFilter<O extends string, T extends ScalarType> = FilterBase<O> &
+{
+    /** First argument */
+    arg1: T;
+
+    /** Second argument */
+    arg2: T;
 }
 
 
@@ -130,25 +179,71 @@ export type Query<M extends AModel, E extends Entity<M,string>> =
  * query("Item", {filter: item => item.price.lt(item.product.msrp)});
  * ```
  */
-export type FilteredEntity<M extends AModel, E extends Entity<M,string>> =
-    { [P in keyof E]-?: FilteredProp<M, E[P]>}
+export type EnhancedEntity<M extends AModel, E extends Entity<M,string>> =
+    { [P in keyof E]-?: EnhancedProp<M, E[P]>}
 
-export type FilteredProp<M extends AModel, T> =
-    T extends string ? FilteredStringProp :
-    T extends number ? FilteredNumberProp :
-    T extends Entity<M, infer CN> ? FilteredLinkProp<M,T> :
+export type EnhancedProp<M extends AModel, T> =
+    T extends string ? EnhancedStringProp :
+    T extends number ? EnhancedNumberProp :
+    T extends Entity<M, infer CN> ? EnhancedLinkProp<M,T> :
     never
+
+
+
+export type Expression<T> =
+    T extends string ? string | EnhancedStringProp :
+    T extends number ? number | EnhancedNumberProp :
+    never
+
+
+
+export interface StringFilterOperations
+{
+    [P: string]: (...args: any[]) => AFilterBase;
+
+    isNull: () => AFilterBase
+    isDefined: () => AFilterBase
+
+    eq: (arg: Expression<string>) => AFilterBase;
+    ne: (arg: Expression<string>) => AFilterBase;
+    lt: (arg: Expression<string>) => AFilterBase;
+    gt: (arg: Expression<string>) => AFilterBase;
+    lte: (arg: Expression<string>) => AFilterBase;
+    gte: (arg: Expression<string>) => AFilterBase;
+
+    like: (arg: Expression<string>) => AFilterBase;
+    match: (arg: Expression<string> | RegExp) => AFilterBase;
+
+    between: (arg1: Expression<string>, arg2: Expression<string>) => AFilterBase;
+}
+
+
+
+export interface NumberFilterOperations
+{
+    [P: string]: (...args: any[]) => AFilterBase;
+
+    isNull: () => AFilterBase
+    isDefined: () => AFilterBase
+
+    eq: (arg: Expression<number>) => AFilterBase;
+    ne: (arg: Expression<number>) => AFilterBase;
+    lt: (arg: Expression<number>) => AFilterBase;
+    gt: (arg: Expression<number>) => AFilterBase;
+    lte: (arg: Expression<number>) => AFilterBase;
+    gte: (arg: Expression<number>) => AFilterBase;
+
+    between: (arg1: Expression<number>, arg2: Expression<number>) => AFilterBase;
+}
+
 
 
 /**
  * Represents a string property "enhanced" with string-appropriate filtering operations
  */
-export type FilteredStringProp =
+export type EnhancedStringProp =
 {
-    $eq: (arg: string | FilteredStringProp) => FilterBase
-    $ne: (arg: string | FilteredStringProp) => FilterBase
-    $isNull: () => FilterBase
-    $isDefined: () => FilterBase
+    [op in keyof StringFilterOperations as `$${op}`]-?: StringFilterOperations[op]
 }
 
 
@@ -156,12 +251,9 @@ export type FilteredStringProp =
 /**
  * Represents a number property "enhanced" with number-appropriate filtering operations
  */
-export type FilteredNumberProp =
+export type EnhancedNumberProp =
 {
-    $eq: (arg: number | FilteredNumberProp) => FilterBase
-    $ne: (arg: number | FilteredNumberProp) => FilterBase
-    $isNull: () => FilterBase
-    $isDefined: () => FilterBase
+    [op in keyof NumberFilterOperations as `$${op}`]-?: NumberFilterOperations[op]
 }
 
 
@@ -171,11 +263,11 @@ export type FilteredNumberProp =
  * This allows checking for `null` values and enhances every property of the linked object with
  * the type-appropriate filtering functions.
  */
-export type FilteredLinkProp<M extends AModel, E extends Entity<M,string>> =
-    { [P in keyof E & string]: FilteredProp<M, E[P]> } &
+export type EnhancedLinkProp<M extends AModel, E extends Entity<M,string>> =
+    { [P in keyof E & string]: EnhancedProp<M, E[P]> } &
     {
-        $isNull: () => FilterBase
-        $isDefined: () => FilterBase
+        $isNull: () => NullFilter
+        $isDefined: () => NullFilter
     }
 
 
@@ -189,36 +281,6 @@ export type Filter<M extends AModel, T> =
     //     { [P in keyof T & string]: Filter<M, T[P]> }
     // ) :
     never
-
-/**
- * All filters derive from this type, which means all filters include the property defining the
- * filter operation.
- */
-export type FilterBase = { op: string }
-
-export type NoArgFilter<O extends string> = FilterBase &
-{
-    op: O;
-}
-
-export type OneArgFilter<O extends string, T extends string | number | boolean | bigint> = FilterBase &
-{
-    op: O;
-
-    /** Single argument */
-    arg: T;
-}
-
-export type TwoArgFilter<O extends string, T extends string | number | bigint> = FilterBase &
-{
-    op: O;
-
-    /** First argument */
-    arg1: T;
-
-    /** Second argument */
-    arg2: T;
-}
 
 
 
@@ -247,6 +309,17 @@ export type StringFilter =
     NullFilter |
     OneArgFilter<StringOneArgFilterOp, string> |
     TwoArgFilter<StringTwoArgFilterOp, string>;
+
+
+
+export type NumberOneArgFilterOp = ComparisonFilterOp;
+
+export type NumberTwoArgFilterOp = BetweenFilterOp;
+
+export type NumberFilter =
+    NullFilter |
+    OneArgFilter<NumberOneArgFilterOp, number> |
+    TwoArgFilter<NumberTwoArgFilterOp, number>;
 
 
 
