@@ -197,7 +197,7 @@ export type Expression<T> =
 
 
 
-export interface StringFilterOperations
+export interface IStringFilterOperations
 {
     [P: string]: (...args: any[]) => AFilterBase;
 
@@ -219,7 +219,7 @@ export interface StringFilterOperations
 
 
 
-export interface NumberFilterOperations
+export interface INumberFilterOperations
 {
     [P: string]: (...args: any[]) => AFilterBase;
 
@@ -243,7 +243,7 @@ export interface NumberFilterOperations
  */
 export type EnhancedStringProp =
 {
-    [op in keyof StringFilterOperations as `$${op}`]-?: StringFilterOperations[op]
+    [op in keyof IStringFilterOperations as `$${op}`]-?: IStringFilterOperations[op]
 }
 
 
@@ -253,7 +253,7 @@ export type EnhancedStringProp =
  */
 export type EnhancedNumberProp =
 {
-    [op in keyof NumberFilterOperations as `$${op}`]-?: NumberFilterOperations[op]
+    [op in keyof INumberFilterOperations as `$${op}`]-?: INumberFilterOperations[op]
 }
 
 
