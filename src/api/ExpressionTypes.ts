@@ -19,31 +19,49 @@ export type TermToLang<DT extends TermDataType> =
 
 
 
-export type TermBase<K extends TermKind, DT extends TermDataType> =
-    {
-        kind: K;
-        dt: DT;
-    } &
+export type TermDataTypeFuncSignature = (...args: TermDataType[]) => TermDataType;
+
+type IStringFuncs =
+{
+    substr: (start: "int") => "string"
+    match: (pattern: "string") => "bool"
+    concat: (...args: "string"[]) => "string"
+}
+
+type INumberFuncs =
+{
+    pow: (exp: "int") => "int"
+}
+
+
+export type MethodsOfInterface<I extends Record<string,TermDataTypeFuncSignature>> =
+    { [op in string & keyof I as `$${op}`]-?: I[op] extends TermDataTypeFuncSignature ? LangDataTypeFuncSugnature<I[op]> : never }
+
+export type Expr<DT extends TermDataType> =
+    {} &
     (
-        DT extends "string"
-            ? { [op in keyof IStringFuncs as `$${op}`]-?: LangDataTypeFuncSugnature<IStringFuncs[op]> }
-            : {}
+        DT extends "string" ? MethodsOfInterface<IStringFuncs> :
+        DT extends "int" ? MethodsOfInterface<INumberFuncs> :
+        {}
     )
 
 
 
-export type TermDataTypeFuncSignature = (...args: TermDataType[]) => TermDataType;
+export type TermBase<K extends TermKind, DT extends TermDataType> = Expr<DT> &
+    {
+        kind: K;
+        dt: DT;
+    }
 
-export type FuncParametersTuple<F extends TermDataTypeFuncSignature> =
-    Parameters<F> extends [] ? [] : {
-        [i in keyof Parameters<F>]: Parameters<F>[i] extends (infer DT extends TermDataType)
-            ? TermToLang<DT> | TermBase<TermKind, DT>
-            : any
-    };
 
-export type LangDataTypeFuncSugnature<F extends TermDataTypeFuncSignature> =
-    (...args: FuncParametersTuple<F> & any[]) => TermBase<TermKind, ReturnType<F>>
 
+export type MappedParamsTuple<T extends TermDataType[]> = { [i in keyof T]: TermToLang<T[i]> | Expr<T[i]> };
+
+export type FuncParametersTuple<F extends (...args: TermDataType[]) => TermDataType> =
+    MappedParamsTuple<Parameters<F>>;
+
+export type LangDataTypeFuncSugnature<F extends (...args: TermDataType[]) => TermDataType> =
+    (...args: MappedParamsTuple<Parameters<F>> extends any[] ? MappedParamsTuple<Parameters<F>> : any[]) => Expr<ReturnType<F>>
 
 
 
@@ -54,7 +72,7 @@ export type LiteralTerm<DT extends TermDataType> = TermBase<"lit", DT> &
 
 
 
-export type FuncTerm<FN extends string, F extends TermDataTypeFuncSignature> =
+export type FuncTerm<FN extends string, F extends (...args: TermDataType[]) => TermDataType> =
     TermBase<"func", ReturnType<F>> &
     {
         /** Function name */
@@ -74,7 +92,7 @@ let sp2: SecondParam2;
 type ThirdParam2 = Term2["args"][2];
 let tp2: ThirdParam2;
 let term2: Term2 = {} as Term2;
-term2.$substr(1)
+term2.$substr(1).$match("abc")
 
 type Term3 = FuncTerm<"and", (...args: "bool"[]) => "bool">;
 type FirstParam3 = Term3["args"][0];
@@ -92,28 +110,5 @@ let fp5: FirstParam5;
 type SecondParam5 = Term5["args"][1];
 let sp5: SecondParam5;
 
-
-
-interface IFuncs
-{
-    [N: string]: (...args: TermDataType[]) => TermDataType;
-}
-
-interface IStringFuncs extends IFuncs
-{
-    // [N: string]: (...args: TermDataType[]) => TermDataType;
-
-    substr: (start: "int") => "string"
-}
-
-
-
-type Func<T extends Array<any>> = (...args: T) => void;
-type Tuple = [string, number];
-type MyFunc = Func<Tuple>;
-let fn: MyFunc = function (x: string, y: number): void {}
-type Tuple1 = [];
-type MyFunc1 = Func<Tuple1>;
-let fn1: MyFunc1 = function (): void {}
 
 

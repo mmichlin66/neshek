@@ -1,82 +1,8 @@
+import { DataType } from "./BasicTypes";
 import {
-    PropType, MultiLink, ModelClassName, ModelStructName, ModelStruct, NameOfClass, Class,
+    MultiLink, ModelClassName, ModelStructName, ModelStruct, NameOfClass,
     AModel, AClass, EntityKey, Entity, EntityPropName
 } from "./ModelTypes";
-import { KeysToTuple } from "./UtilTypes";
-
-/**
- * Represents underlying data types corresponding to property types:
- * - string properties:
- *   - "str" - string
- *   - "clob" - character-based large object
- *   - "date" - date only
- *   - "time" - time only
- *   - "datetime" - datetime
- * - numeric properties
- *   - "int" - signed or unsigned integer of different sizes
- *   - "real" - floating-point numbers of single or double precision
- *   - "dec" - fixed-point numbers (DECIMAL/NUMERIC)
- *   - "bit" - bit-values
- *   - "timestamp" - timestamp
- * - bigint properties
- *   - "bigint" - signed or unsigned integer of different sizes
- *   - "dec" - fixed-point numbers (DECIMAL/NUMERIC)
- *   - "bit" - bit-values
- *   - "timestamp" - timestamp
- * - boolean properties
- *   - "bool" - boolean
- * - Date properties
- *   - "timestamp" - timestamp
- * - Special properties
- *   - "link" - single link
- *   - "multilink" - multi-link
- *   - "obj" - structured object
- *   - "arr" - array
- */
-export type DataType =
-    "str" | "clob" |
-    "bool" |
-    "int" | "bigint" | "real" | "dec" | "bits" |
-    "date" | "time" | "datetime" | "timestamp" |
-    "link" | "multilink" |
-    "obj" | "arr";
-
-
-
-/**
- * Represents underlying data type corresponding to the given property type
- */
-export type DataTypeOfPropType<M extends AModel, T extends PropType> =
-    T extends string ? "str" | "date" | "time" | "datetime" | "timestamp" :
-    T extends number ? "int" | "real" | "dec" | "bit" | "ts" :
-    T extends bigint ? "bigint" | "dec" | "bit" | "ts" :
-    T extends boolean ? "bool" :
-    // T extends Date ? "timestamp" :
-    T extends MultiLink<AClass> ? "multilink" :
-    T extends Class<infer CN,any,any> ? CN extends ModelClassName<M>
-        ? "link"
-        : never :
-    never
-
-// type C = Class<"C"> & {a?: string};
-// type S = Struct<"S">;
-// type M = Model<[C], [S]>
-
-// let dt1: DataTypeOfPropType<M,C>;
-// let dt2: DataTypeOfPropType<Model,S>;
-// let dt3: DataTypeOfPropType<Model, {a: string}>;
-
-
-
-// /**
-//  * Transforms the given primary key object to an object with the same properties and string values.
-//  * This type is needed for single links to specify field names in the table with the foreign key.
-//  * For example, if the primary key of the Order object is {id: number}, the corresponding field
-//  * in the table with the foreign key might be named "order_id".
-//  */
-// export type ForeignKeyFields<K extends object> =
-//     { [P in keyof K & string]: K[P] extends Class<any, infer TNestedKey>
-//         ? ForeignKeyFields<TNestedKey> : string }
 
 
 

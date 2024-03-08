@@ -1,6 +1,8 @@
 // Type definitions for mimcss
 
 export * from "./api/UtilTypes";
+export * from "./api/BasicTypes";
+export * from "./api/ExpressionTypes";
 export * from "./api/ModelTypes";
 export * from "./api/SchemaTypes";
 export * from "./api/QueryTypes";
