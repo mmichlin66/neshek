@@ -13,7 +13,7 @@ export async function testDBRepository_insert_get(): Promise<void>
     let repoSession = repo.createSession();
 
     await repoSession.insert("Product", {code: "123", name: "fork", msrp: 8.95});
-    await repoSession.insert("Order", {id: 123, time: new Date()});
+    await repoSession.insert("Order", {id: 123, time: "2024-03-07"});
     await repoSession.insert("Item", {order: {id: 123}, product: {code: "123"}, price: 7.5});
     await repoSession.insert("ExtraItemInfo", {item: {product: {code: "123"}, order: {id: 123}}, comments: "This is a comment"});
 

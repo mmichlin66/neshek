@@ -47,11 +47,11 @@ export type DataType =
  * Represents underlying data type corresponding to the given property type
  */
 export type DataTypeOfPropType<M extends AModel, T extends PropType> =
-    T extends string ? "str" | "date" | "time" | "datetime" :
+    T extends string ? "str" | "date" | "time" | "datetime" | "timestamp" :
     T extends number ? "int" | "real" | "dec" | "bit" | "ts" :
     T extends bigint ? "bigint" | "dec" | "bit" | "ts" :
     T extends boolean ? "bool" :
-    T extends Date ? "timestamp" :
+    // T extends Date ? "timestamp" :
     T extends MultiLink<AClass> ? "multilink" :
     T extends Class<infer CN,any,any> ? CN extends ModelClassName<M>
         ? "link"
@@ -294,11 +294,11 @@ export type APropDef = StringPropDef | DatePropDef | TimePropDef | DateTimePropD
  */
 export type PropDef<M extends AModel, T> = APropDef &
 (
-    T extends string ? StringPropDef | DatePropDef | TimePropDef | DateTimePropDef :
-    T extends number ? IntPropDef | RealPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
-    T extends bigint ? BigIntPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef :
+    T extends string ? StringPropDef | DatePropDef | TimePropDef | DateTimePropDef | TimestampPropDef :
+    T extends number ? IntPropDef | RealPropDef | DecimalPropDef | BitValuePropDef :
+    T extends bigint ? BigIntPropDef | DecimalPropDef | BitValuePropDef :
     T extends boolean ? BoolPropDef :
-    T extends Date ? TimestampPropDef :
+    // T extends Date ? TimestampPropDef :
     // T extends Array<infer E> ? ArrayPropDef<M,E> :
     T extends MultiLink<infer C> ? MultiLinkPropDef<M,C> :
     T extends Entity<M, infer CN> ? CN extends ModelClassName<M>

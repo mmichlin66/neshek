@@ -7,7 +7,7 @@ import {
 
 export type OrderClass = Class<"Order", {id: number}, undefined> &
 {
-    time: Date;
+    time: string;
     items: MultiLink<ItemClass>;
     // note: NoteStruct;
 }
