@@ -56,6 +56,11 @@ export type NumericDataType = IntegerDataType | RealDataType
 export type BoolDataType ="bool";
 
 /**
+ * Represents underlying data types corresponding to any property types except Boolean:
+ */
+export type NonBoolDataType = StringDataType | NumericDataType | TemporalDataType;
+
+/**
  * Represents underlying data types corresponding to property types:
  * - string properties:
  *   - "str" - string
@@ -105,11 +110,13 @@ export type DataType =
 /**
  * Maps data types to language types used to represent them.
  */
-export type LangTypeOf<DT extends DataType> =
+export type LangTypeOf<DT extends DataType | undefined | null> =
     DT extends StringDataType | TemporalDataType ? string :
-    DT extends BigintDataType ? bigint :
+    DT extends BigintDataType ? bigint : // this line must be before NumericDataType to take effect
     DT extends NumericDataType ? number :
     DT extends BoolDataType ? boolean :
+    DT extends undefined ? undefined :
+    DT extends null ? null :
     object;
 
 
