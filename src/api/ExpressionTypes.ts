@@ -10,7 +10,7 @@ import {
  * to represent data types of parameters and return values for operations and functions that can
  * be invoked on expressions.
  */
-export type DataTypeFunc = (...args: (DataType | LangType | undefined)[]) => DataType;
+export type DataTypeFunc = (...args: (DataType | LangType)[]) => DataType;
 
 /**
  * Tuple that defines to what data types (specified as a first element) the given function
@@ -48,7 +48,6 @@ export interface IFunctionsAndOperations
     // function converting any type to any other type
     toCHAR: [DataType, (maxLen?: "int") => "str"]
     toDECIMAL: [DataType, (precision?: "int", scale?: "int") => "dec"]
-    to: [DataType, (a: "str", b: boolean, c?: "int") => "dec"]
 }
 
 /**
@@ -73,7 +72,7 @@ export type LangMethodsOf<DT extends DataType> =
  *
  * @typeParam DT DataType detrmining what methods and operations can be invoked on the expression.
  */
-export type Expr<DT extends DataType> =
+export type Expression<DT extends DataType> =
     { [N in string & keyof LangMethodsOf<DT> as `$${N}`]-?: LangMethodsOf<DT>[N] }
 
 /**
@@ -93,9 +92,9 @@ export type Expr<DT extends DataType> =
  * @typeParam T A tuple where each element is either a DataType or a LangType or `null` or
  * `undefined`
  */
-export type MappedParamsTuple<T extends (DataType | LangType | null | undefined)[]> =
+export type MappedParamsTuple<T extends (DataType | LangType)[]> =
     { [i in keyof T]: T[i] extends DataType | undefined
-        ? LangTypeOf<T[i]> | Expr<T[i] & DataType> : T[i] };
+        ? LangTypeOf<T[i]> | Expression<T[i] & DataType> : T[i] };
 
 /**
  * Helper type that converts the given function type to a tuple type with elements corresponding
@@ -136,46 +135,7 @@ export type DataTypeFuncParams<F extends DataTypeFunc> = MappedParamsTuple<Param
  * `undefined`.
  */
 export type LangTypeFunc<F extends DataTypeFunc> =
-    (...args: DataTypeFuncParams<F> extends any[] ? DataTypeFuncParams<F> : any[]) => Expr<ReturnType<F>>
-
-
-
-/**
- * Kinds of expressions:
- * - lit - wraps a literal value passed as a language-specific type with indication of the data type.
- * - var - wraps a "variable"
- * - func - function invocation
- * - op - arithmetic or logical operation. They are very similar to function invocation; however
- *   operations have different precedence rules.
- */
-export type ExprKind = "lit" | "var" | "func" | "op";
-
-
-
-export type TermBase<K extends ExprKind, DT extends DataType> = Expr<DT> &
-    {
-        kind: K;
-        dt: DT;
-    }
-
-
-
-export type LiteralTerm<DT extends DataType> = TermBase<"lit", DT> &
-    {
-        v: LangTypeOf<DT>;
-    }
-
-
-
-export type FuncTerm<FN extends string, F extends (...args: DataType[]) => DataType> =
-    TermBase<"func", ReturnType<F>> &
-    {
-        /** Function name */
-        func: FN;
-
-        /** Function parameters */
-        args: DataTypeFuncParams<F>;
-    }
+    (...args: DataTypeFuncParams<F> extends any[] ? DataTypeFuncParams<F> : any[]) => Expression<ReturnType<F>>
 
 
 

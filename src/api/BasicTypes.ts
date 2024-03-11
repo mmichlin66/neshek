@@ -1,7 +1,7 @@
 /**
  * Represents language-specific scalar types used to work with class properties.
  */
-export type LangType = string | number| bigint | boolean ;
+export type LangType = string | number| bigint | boolean | null | undefined;
 
 
 
@@ -106,6 +106,31 @@ export type DataType =
 //     never
 
 
+// export type Num_0_9 = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+// export type Num_1_9 = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
+// export type Num_00_23 = `${0|1}${Num_0_9}` | `2${0|2|3}`;
+// export type Num_00_59 = `${0|1|2|3|4|5}${Num_0_9}`;
+// export type SqlTime = `${Num_00_23}:${Num_00_59}:${Num_00_59}`// | `${HH}:${mm}:${ss}.${number}`;
+
+// export type Num_01_12 = `0${Num_1_9}` | `1${0|1|2}`;
+// export type Num_01_31 = `${0}${Num_1_9}` | `${1|2}${Num_0_9}` | `3${0|1}`;
+// export type SqlDate = `${Num_0_9}${Num_0_9}${Num_0_9}${Num_0_9}-${Num_01_12}-${Num_01_31}`
+
+
+
+/**
+ * Represents data type corresponding to the given language type
+ */
+export type DataTypeOf<T extends LangType> =
+    // T extends SqlTime ? "time" :
+    T extends string ? "str" | "clob" | "date" | "time" | "datetime" | "timestamp" :
+    T extends number ? "int" | "real" | "dec" | "year" :
+    T extends bigint ? "bigint" | "bit" :
+    T extends boolean ? "bool" :
+    undefined
+
+
 
 /**
  * Maps data types to language types used to represent them.
@@ -117,7 +142,7 @@ export type LangTypeOf<DT extends DataType | undefined | null> =
     DT extends BoolDataType ? boolean :
     DT extends undefined ? undefined :
     DT extends null ? null :
-    object;
+    never;
 
 
 

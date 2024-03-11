@@ -10,6 +10,7 @@ export * from "./api/RepoTypes";
 export * from "./api/DBTypes";
 export * from "./api/RdbTypes";
 
+export * from "./api/ExpressionAPI";
 export * from "./api/RdbAdapter";
 
 

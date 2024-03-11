@@ -190,7 +190,7 @@ export type EnhancedProp<M extends AModel, T> =
 
 
 
-export type Expression<T> =
+export type Expression1<T> =
     T extends string ? string | EnhancedStringProp :
     T extends number ? number | EnhancedNumberProp :
     never
@@ -204,17 +204,17 @@ export interface IStringFilterOperations
     isNull: () => AFilterBase
     isDefined: () => AFilterBase
 
-    eq: (arg: Expression<string>) => AFilterBase;
-    ne: (arg: Expression<string>) => AFilterBase;
-    lt: (arg: Expression<string>) => AFilterBase;
-    gt: (arg: Expression<string>) => AFilterBase;
-    lte: (arg: Expression<string>) => AFilterBase;
-    gte: (arg: Expression<string>) => AFilterBase;
+    eq: (arg: Expression1<string>) => AFilterBase;
+    ne: (arg: Expression1<string>) => AFilterBase;
+    lt: (arg: Expression1<string>) => AFilterBase;
+    gt: (arg: Expression1<string>) => AFilterBase;
+    lte: (arg: Expression1<string>) => AFilterBase;
+    gte: (arg: Expression1<string>) => AFilterBase;
 
-    like: (arg: Expression<string>) => AFilterBase;
-    match: (arg: Expression<string> | RegExp) => AFilterBase;
+    like: (arg: Expression1<string>) => AFilterBase;
+    match: (arg: Expression1<string> | RegExp) => AFilterBase;
 
-    between: (arg1: Expression<string>, arg2: Expression<string>) => AFilterBase;
+    between: (arg1: Expression1<string>, arg2: Expression1<string>) => AFilterBase;
 }
 
 
@@ -226,14 +226,14 @@ export interface INumberFilterOperations
     isNull: () => AFilterBase
     isDefined: () => AFilterBase
 
-    eq: (arg: Expression<number>) => AFilterBase;
-    ne: (arg: Expression<number>) => AFilterBase;
-    lt: (arg: Expression<number>) => AFilterBase;
-    gt: (arg: Expression<number>) => AFilterBase;
-    lte: (arg: Expression<number>) => AFilterBase;
-    gte: (arg: Expression<number>) => AFilterBase;
+    eq: (arg: Expression1<number>) => AFilterBase;
+    ne: (arg: Expression1<number>) => AFilterBase;
+    lt: (arg: Expression1<number>) => AFilterBase;
+    gt: (arg: Expression1<number>) => AFilterBase;
+    lte: (arg: Expression1<number>) => AFilterBase;
+    gte: (arg: Expression1<number>) => AFilterBase;
 
-    between: (arg1: Expression<number>, arg2: Expression<number>) => AFilterBase;
+    between: (arg1: Expression1<number>, arg2: Expression1<number>) => AFilterBase;
 }
 
 
