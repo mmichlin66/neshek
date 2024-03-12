@@ -3,10 +3,34 @@ import { Expression } from "./ExpressionTypes";
 
 
 
-export function renderExpr<T extends DataType>(expr: Expression<T>): string
+/**
+ * Creates an expression representing a literal value. This needed to form expressions that start
+ * from a literal value by invoking methods on it. For example, to represent expression `5 - 6`,
+ * we can write `lit(5).minus(6)`. The data type of the expression is determined by the language
+ * type of the value passed to it. It can also be narrowed down by either specifying it as a
+ * template parameter (e.g. `lit<"date">("2024-03-03")`) or by passing it as a second parameter,
+ * (e.g. `lit("2024-03-03", "date")`).
+ * @param v Value to be wrapped.
+ * @param dt Optional data type that determines what methods can be invoked on the returned
+ * expression.
+ * @returns Expression object of the given data type.
+ */
+export function lit<DT extends DataType, LT extends LangTypeOf<DT>>(v: LT, dt?: DT): Expression<DT & DataTypeOf<LT>>
 {
-    return expr["render"]();
+    return new Proxy<Expr>(new LiteralExpr(v), new ExprMethodsImpl()) as unknown as Expression<DT & DataTypeOf<LT>>;
+}
 
+
+
+/**
+ * Renders the given expression as its string representation.
+ * @param expression Expression to render.
+ * @returns String representation of the expression
+ */
+export function renderExpression<T extends DataType>(expression: Expression<T>): string
+{
+    // treat any Expression object as instances of the Expr class
+    return renderExpr((expression?.[symExpr] ?? expression) as Expr)[0];
 }
 
 
@@ -32,20 +56,19 @@ abstract class Expr
     constructor(kind: ExprKind)
     {
         this.kind = kind;
-
-        let impl = new ExprMethodsImpl();
-
-        // instead of returning an instance of our class, the constructor returns a proxy. This
-        // allows implementing all expression methods (functions and operations).
-        return new Proxy<Expr>(this, impl);
     }
-
-    abstract render(): string;
-    abstract get rank(): number;
 }
 
 
 
+/**
+ * Symbol used to extract the Expr-based objects from the Proxy implementing the Expression type.
+ */
+const symExpr = Symbol();
+
+/**
+ * Proxy handler for Expr-based objects.
+ */
 class ExprMethodsImpl implements ProxyHandler<Expr>
 {
     /**
@@ -56,9 +79,9 @@ class ExprMethodsImpl implements ProxyHandler<Expr>
      */
     get?(target: Expr, p: string | symbol, receiver: any): any
     {
-        // handle the "render" method
-        if (p === "render")
-            return target[p].bind(target);
+        // return the Expr object itself
+        if (p === symExpr)
+            return target;
 
         // other properties are considered to be functions: we return our methodBuilder function
         // bound to the target expression and the invoked function name so that it will produce a
@@ -82,10 +105,10 @@ class ExprMethodsImpl implements ProxyHandler<Expr>
  */
 function methodBuilder(this: Expr, name: string, ...args: (Expr | LangType)[]): Expr
 {
-    if (name === "$minus")
-        return new MethodExpr("-", this, args);
+    // return new MethodExpr(name, this, args);
 
-    return new MethodExpr(name, this, args);
+    // return a proxy, which implements all expression methods (functions and operations).
+    return new Proxy<Expr>(new MethodExpr(name, this, args), new ExprMethodsImpl());
 }
 
 
@@ -95,27 +118,27 @@ function methodBuilder(this: Expr, name: string, ...args: (Expr | LangType)[]): 
  */
 const enum PrecedenceRank
 {
-    MAX = 10000,
+    MAX = 0,
 
-    INTERVAL = 1000,
-    BINARY = 990,
-    NOT = 980,
-    UNARY = 970,
-    BIT_XOR = 960,
-    MULTIPLICATION = 950,
-    DIVISION = 950,
-    ADDITION = 940,
-    SUBTRACTION = 940,
-    SHIFT = 930,
-    BIT_AND = 920,
-    BIT_OR = 910,
-    COMPARISON = 900,
-    BETWEEN = 890,
-    CASE = 890,
-    AND = 880,
-    XOR = 870,
-    OR = 860,
-    ASSIGNMENT = 850,
+    INTERVAL = 20,
+    BINARY = 40,
+    NOT = 60,
+    UNARY = 80,
+    BIT_XOR = 100,
+    MULTIPLICATION = 120,
+    DIVISION = 120,
+    ADDITION = 160,
+    SUBTRACTION = 160,
+    SHIFT = 200,
+    BIT_AND = 220,
+    BIT_OR = 240,
+    COMPARISON = 260,
+    BETWEEN = 280,
+    CASE = 300,
+    AND = 320,
+    XOR = 340,
+    OR = 360,
+    ASSIGNMENT = 380,
 }
 
 
@@ -176,58 +199,99 @@ type OpInfo =
  */
 let methods: { [K: string]: string | FuncInfo | OpInfo } = {
     times: {type: "op", sign: "*", rank: PrecedenceRank.MULTIPLICATION},
+    plus: {type: "op", sign: "+", rank: PrecedenceRank.ADDITION},
     minus: {type: "op", sign: "-", rank: PrecedenceRank.SUBTRACTION, sameOpGroup: true},
 }
 
 
 
+/**
+ * Renders the given expression.
+ */
+function renderExpr(expr: Expr): [string, PrecedenceRank]
+{
+    // we assume that any expression passed to this function is a proxy to an Expr-based object
+    // let expr = (expression[symExpr] ?? expression) as Expr;
+    switch (expr.kind)
+    {
+        case "lit": return [renderLangType((expr as LiteralExpr).v), PrecedenceRank.MAX];
+        case "method": return renderMethodExpr(expr as MethodExpr);
+        case "var": return ["", PrecedenceRank.MAX];
+    }
+}
+
+/**
+ * Renders the given MethodExpr object and return
+ */
+function renderMethodExpr(expr: MethodExpr): [string, PrecedenceRank]
+{
+    // combine the source expression and all the arguments into a single array
+    let allArgs = expr.source ? [expr.source, ...expr.args] : expr.args;
+
+    // get information object about this method. If we don't have it, then treat this as a
+    // function.
+    let info = methods[expr.name];
+    if (!info)
+        return renderFunc({type: "func", name: expr.name.toUpperCase()}, allArgs);
+    else if (typeof info === "string")
+        return renderFunc({type: "func", name: info}, allArgs);
+    else if (info.type === "func")
+        return renderFunc(info, allArgs);
+    else
+        return renderOp(info, allArgs);
+}
+
+
+
 /** Renders this expression as a function call */
-function renderFunc(info: FuncInfo, args: (Expr | LangType)[]): string
+function renderFunc(info: FuncInfo, args: (Expr | LangType)[]): [string, PrecedenceRank]
 {
     // render all arguments as comma-separated parameters of the function.
-    return `${info.name}(${args.map(arg => renderArg(arg)).join(",")})`;
+    let argString = args.map(arg => renderArg(arg)[0]).join(",");
+    return [`${info.name}(${argString})`, PrecedenceRank.MAX];
 }
 
 /** Renders this expression as an operator expression */
-function renderOp(info: OpInfo, args: (Expr | LangType)[]): string
+function renderOp(info: OpInfo, args: (Expr | LangType)[]): [string, PrecedenceRank]
 {
     if (args.length === 1)
     {
-        let s = renderArg(args[0]);
-        return info.postfix ? s + info.sign : info.sign + s;
+        let [s, rank] = renderArg(args[0]);
+        if (rank > PrecedenceRank.MAX)
+            s = `(${s})`;
+
+        return [info.postfix ? s + info.sign : info.sign + s, PrecedenceRank.MAX];
 
     }
+
     // render all arguments separating them with the operation.
-    return args.map(arg => renderArg(arg)).join(` ${this.name} `);
+    let ourRank = info.rank;
+    return [args.map((arg, index) => {
+        let [s, argRank] = renderArg(arg);
+        if (argRank < ourRank)
+            return s;
+        else if (argRank > ourRank)
+            return `(${s})`;
+        else if (info.sameOpGroup && index > 0)
+            return `(${s})`;
+        else
+            return s;
+    }).join(` ${info.sign} `), ourRank];
 }
 
 
 
 /**
- * Renders a function/operation argument, which can be either an expression or a language type.
+ * Renders a function/operation argument, which can be either an expression or a language type. It
+ * returns a tuple containing the rendered string and the precedence rank of the rendered
+ * expression. The rank will be needed if the result is further combined with other expressions.
  * @param arg Value to render.
- * @returns Rendered string.
+ * @returns A two element tuple, where the first element is a rendered string and the second tuple
+ * is the precedence rank of the rendered expression.
  */
-function renderArgForRank(arg: Expr | LangType, rank: PrecedenceRank): string
+function renderArg(arg: Expr | LangType): [string, PrecedenceRank]
 {
-    let s = renderArg(arg);
-    // let argRank: PrecedenceRank;
-    // if (arg instanceof Expr)
-    // {
-    //     argRank = arg.kind === ""
-    // }
-
-    return s;
-}
-
-/**
- * Renders a function/operation argument, which can be either an expression or a language type.
- * @param arg Value to render.
- * @returns Rendered string.
- */
-function renderArg(arg: Expr | LangType): string
-{
-    return arg instanceof Expr ? arg.render() : renderLangType(arg);
+    return arg instanceof Expr ? renderExpr(arg) : [renderLangType(arg), PrecedenceRank.MAX];
 }
 
 
@@ -251,23 +315,19 @@ const renderLangType = (v: LangType): string =>
 
 
 /**
- * Represents a wrapper around a literal value
+ * Represents an expression, which simply is a wrapper around a literal value. Objects of this type
+ * are created using the `lit` function. We need this to enable invoking methods to produce
+ * function calls and operator expressions that start with a literal value. For example, to
+ * represent expression `5 - 6`, we can write `lit(5).minus(6)`.
  */
 class LiteralExpr extends Expr
 {
     v: LangType;
-    get rank(): number { return PrecedenceRank.MAX; }
 
     constructor(v: LangType)
     {
         super("lit");
         this.v = v;
-    }
-
-    render(): string
-    {
-        return renderLangType(this.v);
-
     }
 }
 
@@ -299,46 +359,47 @@ class MethodExpr extends Expr
      */
     args: (Expr | LangType)[];
 
-    get rank(): number { return PrecedenceRank.MAX; }
-
-    constructor(name: string, source?: Expr, args?: (Expr | LangType)[])
+    constructor(name: string, source?: Expr | Expression<any>, args?: ( Expr | Expression<any> | LangType)[])
     {
         super("method");
         this.name = name.startsWith("$") ? name.substring(1) : name;
-        this.source = source;
-        this.args = args ?? [];
+
+        // source can be an Expr-based object or a proxy to Expr-based object.
+        this.source = (source?.[symExpr] ?? source) as Expr;
+
+        // each argument can be either an Expr-based object or a proxy to Expr-based object or a
+        // language type
+        this.args = !args ? [] : args.map(arg =>
+            arg instanceof Expr ? (arg?.[symExpr] ?? arg) as Expr : arg as LangType);
     }
-
-    render(): string
-    {
-        // combine the source expression and all the arguments into a single array
-        let allArgs = this.source ? [this.source, ...this.args] : this.args;
-
-        // get information object about this method. If we don't have it, then treat this as a
-        // function.
-        let info = methods[this.name];
-        if (!info)
-            return renderFunc({type: "func", name: this.name.toUpperCase()}, allArgs);
-        else if (typeof info === "string")
-            return renderFunc({type: "func", name: info}, allArgs);
-        else if (info.type === "func")
-            return renderFunc(info, allArgs);
-        else
-            return renderOp(info, allArgs);
-    }
-}
-
-export function lit<DT extends DataType, LT extends LangTypeOf<DT>>(v: LT, dt?: DT): Expression<DT & DataTypeOf<LT>>
-{
-    return new LiteralExpr(v) as unknown as Expression<DT & DataTypeOf<LT>>;
 }
 
 
 
 export function testExpressionAPI(): void
 {
-    let e = lit(12).$pow(2).$pow(3).$abs().$minus(4, 5);
-    let s = renderExpr(e);
+    let s = renderExpression(lit(12).$pow(2).$pow(3).$abs().$minus(4, 5));
+    console.log(s);
+
+    s = renderExpression(lit(12).$minus(4).$times(lit(10).$minus(5)));
+    console.log(s);
+
+    s = renderExpression(lit(12).$times(4).$minus(lit(10).$times(5)));
+    console.log(s);
+
+    s = renderExpression(lit(12).$times(4).$minus(10).$times(5));
+    console.log(s);
+
+    s = renderExpression(lit(12).$minus(4).$plus(lit(10).$minus(5)));
+    console.log(s);
+
+    s = renderExpression(lit(12).$minus(4).$minus(lit(10).$minus(5)));
+    console.log(s);
+
+    s = renderExpression(lit(12).$minus(4).$minus(lit(10).$times(5)));
+    console.log(s);
+
+    s = renderExpression(lit(8).$pow(2).$minus(12, 4).$minus(lit(10).$times(5)));
     console.log(s);
 }
 

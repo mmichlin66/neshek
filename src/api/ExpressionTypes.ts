@@ -32,6 +32,7 @@ export interface IFunctionsAndOperations
     abs: [NumericDataType, () => NumericDataType]
     pow: [NumericDataType, (exp: "int") => NumericDataType]
     minus: [NumericDataType, (...args: NumericDataType[]) => NumericDataType]
+    plus: [NumericDataType, (...args: NumericDataType[]) => NumericDataType]
     times: [NumericDataType, (...args: NumericDataType[]) => NumericDataType]
 
     // Boolean functions
