@@ -46,9 +46,10 @@ export interface IFunctionsAndOperations
     notIn: [DataType, (...args: DataType[]) => BoolDataType]
     isNull: [DataType, () => BoolDataType]
     isNotNull: [DataType, () => BoolDataType]
+    not: [BoolDataType | NumericDataType, () => BoolDataType]
 
     // function converting any type to any other type
-    toCHAR: [DataType, (maxLen?: "int") => "str"]
+    toCHAR: [DataType, (maxLen?: "int", charset?: "str") => "str"]
     toDECIMAL: [DataType, (precision?: "int", scale?: "int") => "dec"]
 }
 

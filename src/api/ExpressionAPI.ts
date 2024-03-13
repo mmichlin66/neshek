@@ -17,7 +17,7 @@ import { Expression } from "./ExpressionTypes";
  */
 export function lit<DT extends DataType, LT extends LangTypeOf<DT>>(v: LT, dt?: DT): Expression<DT & DataTypeOf<LT>>
 {
-    return new Proxy<Expr>(new LiteralExpr(v), new ExprMethodsImpl()) as unknown as Expression<DT & DataTypeOf<LT>>;
+    return createExprProxy(new LiteralExpr(v)) as unknown as Expression<DT & DataTypeOf<LT>>;
 }
 
 
@@ -27,11 +27,20 @@ export function lit<DT extends DataType, LT extends LangTypeOf<DT>>(v: LT, dt?: 
  * @param expression Expression to render.
  * @returns String representation of the expression
  */
-export function renderExpression<T extends DataType>(expression: Expression<T>): string
-{
+export const renderExpression = <T extends DataType>(expression: Expression<T>): string =>
     // treat any Expression object as instances of the Expr class
-    return renderExpr((expression?.[symExpr] ?? expression) as Expr)[0];
-}
+    renderExpr((expression?.[symExpr] ?? expression) as Expr)[0];
+
+
+
+/**
+ * Returns a proxy object for the given Expr-based object. The rank may be needed if the result is
+ * further combined with other expressions.
+ * @param arg Value to render.
+ * @returns A two element tuple, where the first element is a rendered string and the second tuple
+ * is the precedence rank of the rendered expression.
+ */
+const createExprProxy = (expr: Expr): any => new Proxy<Expr>(expr, new ExprMethodsImpl());
 
 
 
@@ -108,7 +117,7 @@ function methodBuilder(this: Expr, name: string, ...args: (Expr | LangType)[]): 
     // return new MethodExpr(name, this, args);
 
     // return a proxy, which implements all expression methods (functions and operations).
-    return new Proxy<Expr>(new MethodExpr(name, this, args), new ExprMethodsImpl());
+    return createExprProxy(new MethodExpr(name, this, args));
 }
 
 
@@ -134,7 +143,7 @@ const enum PrecedenceRank
     BIT_OR = 240,
     COMPARISON = 260,
     BETWEEN = 280,
-    CASE = 300,
+    CASE = 280,
     AND = 320,
     XOR = 340,
     OR = 360,
@@ -148,7 +157,7 @@ type FuncInfo =
 {
     type: "func";
 
-    /** If omitted, the name is the method name (without the leading dollar sign) */
+    /** If omitted, the name is the uppercase method name (without the leading dollar sign) */
     name?: string;
 
     /**
@@ -201,12 +210,16 @@ let methods: { [K: string]: string | FuncInfo | OpInfo } = {
     times: {type: "op", sign: "*", rank: PrecedenceRank.MULTIPLICATION},
     plus: {type: "op", sign: "+", rank: PrecedenceRank.ADDITION},
     minus: {type: "op", sign: "-", rank: PrecedenceRank.SUBTRACTION, sameOpGroup: true},
+    not: {type: "op", sign: "NOT", rank: PrecedenceRank.NOT},
+
+    toCHAR: {type: "func", name: "", render: renderToCHAR},
 }
 
 
 
 /**
- * Renders the given expression.
+ * Renders the given expression and returns a tuple with the rendered string and the expression
+ * precedence rank.
  */
 function renderExpr(expr: Expr): [string, PrecedenceRank]
 {
@@ -231,24 +244,54 @@ function renderMethodExpr(expr: MethodExpr): [string, PrecedenceRank]
     // get information object about this method. If we don't have it, then treat this as a
     // function.
     let info = methods[expr.name];
-    if (!info)
-        return renderFunc({type: "func", name: expr.name.toUpperCase()}, allArgs);
-    else if (typeof info === "string")
-        return renderFunc({type: "func", name: info}, allArgs);
-    else if (info.type === "func")
-        return renderFunc(info, allArgs);
+    if (!info || typeof info === "string" || info.type === "func")
+        return renderFunc(expr.name, allArgs, info);
     else
         return renderOp(info, allArgs);
 }
 
 
 
-/** Renders this expression as a function call */
-function renderFunc(info: FuncInfo, args: (Expr | LangType)[]): [string, PrecedenceRank]
+function renderToCHAR(name: string, args: (Expr | LangType)[]): string
 {
-    // render all arguments as comma-separated parameters of the function.
-    let argString = args.map(arg => renderArg(arg)[0]).join(",");
-    return [`${info.name}(${argString})`, PrecedenceRank.MAX];
+    let expr = renderArg(args[0])[0];
+    let maxLen = args[1] ? renderArg(args[1])[0] : undefined;
+    let charset = args[2] ? renderArg(args[2], true)[0] : undefined;
+    let s = `CAST(${expr} AS CHAR`;
+
+    if (maxLen)
+        s += `(${maxLen})`;
+
+    if (charset)
+    {
+        if (charset.localeCompare("ASCII", undefined, {sensitivity: "base"}) === 0)
+            s += " ASCII"
+        else if (charset.localeCompare("UNICODE", undefined, {sensitivity: "base"}) === 0)
+            s += " UNICODE"
+        else
+            s += " CHARACTER SET " + charset;
+    }
+
+    return s + ")";
+}
+
+
+
+/** Renders this expression as a function call */
+function renderFunc(methodName: string, args: (Expr | LangType)[], info?: string | FuncInfo): [string, PrecedenceRank]
+{
+    let name = !info ? methodName.toUpperCase() : typeof info === "string" ? info : info.name ?? methodName.toUpperCase();
+    let renderFunc = info && typeof info !== "string" ? info.render : undefined;
+    let s: string;
+    if (renderFunc)
+        s = renderFunc(name, args);
+    else
+    {
+        // render all arguments as comma-separated parameters of the function.
+        let argString = args.map(arg => renderArg(arg)[0]).join(",");
+        s = `${name}(${argString})`;
+    }
+    return [s, PrecedenceRank.MAX];
 }
 
 /** Renders this expression as an operator expression */
@@ -286,13 +329,12 @@ function renderOp(info: OpInfo, args: (Expr | LangType)[]): [string, PrecedenceR
  * returns a tuple containing the rendered string and the precedence rank of the rendered
  * expression. The rank will be needed if the result is further combined with other expressions.
  * @param arg Value to render.
+ * @param noQuotes Flag indicating that string value should not be put in quotation marks.
  * @returns A two element tuple, where the first element is a rendered string and the second tuple
  * is the precedence rank of the rendered expression.
  */
-function renderArg(arg: Expr | LangType): [string, PrecedenceRank]
-{
-    return arg instanceof Expr ? renderExpr(arg) : [renderLangType(arg), PrecedenceRank.MAX];
-}
+const renderArg = (arg: Expr | LangType, noQuotes?: boolean): [string, PrecedenceRank] =>
+    arg instanceof Expr ? renderExpr(arg) : [renderLangType(arg, noQuotes), PrecedenceRank.MAX];
 
 
 
@@ -303,10 +345,11 @@ function renderArg(arg: Expr | LangType): [string, PrecedenceRank]
  * - numbers and bigint are rendered as is.
  * - Booleans are rendered as `TRUE` and `FALSE` (upper-case)
  * @param v Value to render.
+ * @param noQuotes Flag indicating that string value should not be put in quotation marks.
  * @returns Rendered string.
  */
-const renderLangType = (v: LangType): string =>
-    typeof v === "string" ? `"${v}"` :
+const renderLangType = (v: LangType, noQuotes?: boolean): string =>
+    typeof v === "string" ? noQuotes ? v : `"${v}"` :
     v === true ? "TRUE" :
     v === false ? "FALSE" :
     v == null ? "NULL" :
@@ -364,11 +407,11 @@ class MethodExpr extends Expr
         super("method");
         this.name = name.startsWith("$") ? name.substring(1) : name;
 
-        // source can be an Expr-based object or a proxy to Expr-based object.
+        // source can be an Expr-based object or a proxy to Expr-based object. We are getting rid of proxies.
         this.source = (source?.[symExpr] ?? source) as Expr;
 
         // each argument can be either an Expr-based object or a proxy to Expr-based object or a
-        // language type
+        // language type. We are getting rid of proxies.
         this.args = !args ? [] : args.map(arg =>
             arg instanceof Expr ? (arg?.[symExpr] ?? arg) as Expr : arg as LangType);
     }
@@ -396,10 +439,25 @@ export function testExpressionAPI(): void
     s = renderExpression(lit(12).$minus(4).$minus(lit(10).$minus(5)));
     console.log(s);
 
-    s = renderExpression(lit(12).$minus(4).$minus(lit(10).$times(5)));
+    s = renderExpression(lit(12).$minus(4).$minus(lit(10).$times(5)).$not());
     console.log(s);
 
     s = renderExpression(lit(8).$pow(2).$minus(12, 4).$minus(lit(10).$times(5)));
+    console.log(s);
+
+    s = renderExpression(lit("abracadabra").$toCHAR());
+    console.log(s);
+
+    s = renderExpression(lit("abracadabra").$toCHAR(undefined, "UNICODE"));
+    console.log(s);
+
+    s = renderExpression(lit("abracadabra").$toCHAR(12));
+    console.log(s);
+
+    s = renderExpression(lit("abracadabra").$toCHAR(12, "ASCII"));
+    console.log(s);
+
+    s = renderExpression(lit("abracadabra").$toCHAR(12, "latin1"));
     console.log(s);
 }
 
