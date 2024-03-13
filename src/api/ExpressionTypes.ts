@@ -48,9 +48,19 @@ export interface IFunctionsAndOperations
     isNotNull: [DataType, () => BoolDataType]
     not: [BoolDataType | NumericDataType, () => BoolDataType]
 
-    // function converting any type to any other type
+    // function converting one type to another other type
     toCHAR: [DataType, (maxLen?: "int", charset?: "str") => "str"]
+    toDATE: [DataType, () => "date"]
+    toDATETIME: [DataType, (precision?: "int") => "datetime"]
     toDECIMAL: [DataType, (precision?: "int", scale?: "int") => "dec"]
+    toDOUBLE: [DataType, () => "real"]
+    toFLOAT: [DataType, (precision?: "int") => "real"]
+    toNCHAR: [DataType, (maxLen?: "int") => "str"]
+    toREAL: [DataType, () => "real"]
+    toSIGNED: [DataType, () => "bigint"]
+    toTIME: [DataType, (precision?: "int") => "time"]
+    toUNSIGNED: [DataType, () => "bigint"]
+    toYEAR: [DataType, (precision?: "int") => "year"]
 }
 
 /**
