@@ -23,6 +23,25 @@ export function lit<DT extends DataType, LT extends LangTypeOf<DT>>(v: LT, dt?: 
 
 
 /**
+ * Creates an expression representing a variable. Variable name can be either a simple name or a
+ * name in dotted notation. Accessing properties of the returned object will produce additional
+ * variable expressions by adding `.prop_name` to the previous name. Thus `varref("table").id`
+ * becomes `table.id` after rendering.
+ * 
+ * This function is not intended to be called by developers creating queries - instead it is
+ * called by the query infrastructure. It is this infrastructure that casts the returned object
+ * to a proper type, so that appropriate properties and expression methods can be called on it.
+ * @param v Variable name.
+ * @returns Object of `unknown` type.
+ */
+export function createVar(name: string): unknown
+{
+    return createExprProxy(new VarExpr(name));
+}
+
+
+
+/**
  * Renders the given expression as its string representation.
  * @param expression Expression to render.
  * @returns String representation of the expression
@@ -94,11 +113,25 @@ class ExprMethodsImpl implements ProxyHandler<Expr>
         // return the Expr object itself
         if (p === symExpr)
             return target;
-
-        // other properties are considered to be functions: we return our methodBuilder function
-        // bound to the target expression and the invoked function name so that it will produce a
-        // proper expression when called.
-        return methodBuilder.bind(target, p);
+        else if (typeof p !== "string")
+        {
+            // we don't support non-string properties
+            return target[p];
+        }
+        else if (p.startsWith("$"))
+        {
+            // properties with "$" are considered to be functions: we return our methodBuilder
+            // function bound to the target expression and the invoked function name so that it
+            // will produce a proper expression when called.
+            return methodBuilder.bind(target, p.substring(1));
+        }
+        else if (target instanceof VarExpr)
+        {
+            // use dotted notation to create new VarExpr and proxy for it
+            return createExprProxy(new VarExpr(target.name + "." + p));
+        }
+        else
+            return target[p];
     }
 }
 
@@ -118,9 +151,6 @@ class ExprMethodsImpl implements ProxyHandler<Expr>
 function methodBuilder(this: Expr, name: string, ...args: any[]): Expr
 {
     // return a proxy, which implements all expression methods (functions and operations).
-    if (name.startsWith("$"))
-        name = name.substring(1);
-
     return createExprProxy(new MethodExpr(name, this, args));
 }
 
@@ -323,6 +353,13 @@ let methods: { [K in keyof IFunctionsAndOperations]?: MethodInfo } = {
     times: {type: "o", sign: "*", rank: PrecedenceRank.MULTIPLICATION},
     case: {type: "o", sign: "CASE", rank: PrecedenceRank.COMPARISON, render: renderCASE},
 
+    eq: {type: "o", sign: "=", rank: PrecedenceRank.COMPARISON},
+    ne: {type: "o", sign: "!=", rank: PrecedenceRank.COMPARISON},
+    lt: {type: "o", sign: "<", rank: PrecedenceRank.COMPARISON},
+    lte: {type: "o", sign: "<=", rank: PrecedenceRank.COMPARISON},
+    gt: {type: "o", sign: ">", rank: PrecedenceRank.COMPARISON},
+    gte: {type: "o", sign: ">=", rank: PrecedenceRank.COMPARISON},
+
     toCHAR: {type: "f", render: renderCAST},
     toDATE: {type: "f", render: renderCAST},
     toDATETIME: {type: "f", render: renderCAST},
@@ -345,13 +382,11 @@ let methods: { [K in keyof IFunctionsAndOperations]?: MethodInfo } = {
  */
 function renderExpr(expr: Expr): [string, PrecedenceRank]
 {
-    // we assume that any expression passed to this function is a proxy to an Expr-based object
-    // let expr = (expression[symExpr] ?? expression) as Expr;
     switch (expr.kind)
     {
         case "lit": return [renderLangType((expr as LiteralExpr).v), PrecedenceRank.MAX];
+        case "var": return [(expr as VarExpr).name, PrecedenceRank.MAX];
         case "method": return renderMethodExpr(expr as MethodExpr);
-        case "var": return ["", PrecedenceRank.MAX];
     }
 }
 
@@ -492,6 +527,26 @@ class LiteralExpr extends Expr
 
 
 /**
+ * Represents an expression, which is a wrapper around a "variable". In our system a variable is
+ * either a simple name or a name in the dotted notation. Rendering the variable expression
+ * produces a string with the variable name. Initial VarExpr objects are created either through the
+ * `var()` function, which creates VarExpr object and returns a proxy to it. The dotted notation
+ * is created by accessing a property through a such proxies.
+ */
+class VarExpr extends Expr
+{
+    name: string;
+
+    constructor(name: string)
+    {
+        super("var");
+        this.name = name;
+    }
+}
+
+
+
+/**
  * Represents an expression created by invoking a method on another expression called "source".
  * This class represents function and operator expressions. Both expression kinds
  * have name, source expression and optional additional parameters. If the method was invoked on
@@ -546,8 +601,20 @@ function removeProxies(args: any[]): MethodArgs
 }
 
 
+type EnhancedObject<T> =
+    { [P in keyof T]-?: T[P] extends DataType ? Expression<T[P]> : unknown }
+
 export function testExpressionAPI(): void
 {
+    type Table = {
+        str: "str",
+        int: "int",
+        bool: "bool";
+    }
+
+    let t1 = createVar("table1") as EnhancedObject<Table>;
+    let t2 = createVar("table2") as EnhancedObject<Table>;
+
     let expressions = [
         lit(12).$pow(2).$pow(3).$abs().$minus(4, 5),
         lit(12).$minus(4).$times(lit(10).$minus(5)),
@@ -572,12 +639,14 @@ export function testExpressionAPI(): void
         lit(6).$notIn(5, 6, 7),
 
         lit(8).$case([1, 1], [lit(2), 4], ["3", 9], [undefined, 8]),
+
+        t1.str.$eq(t2.str),
     ];
 
     for (let expression of expressions)
     {
         let s = renderExpression(expression);
-        console.log(s);
+        console.warn(s);
     }
 }
 
