@@ -27,7 +27,7 @@ export function lit<DT extends DataType, LT extends LangTypeOf<DT>>(v: LT, dt?: 
  * @param expression Expression to render.
  * @returns String representation of the expression
  */
-export function renderExpression(expression: any): string
+export function renderExpression(expression: Expression<DataType>): string
 {
     // treat any Expression object as instances of the Expr class
     let expr = expression instanceof Expr ? (expression?.[symExpr] ?? expression) as Expr : undefined;
@@ -115,9 +115,12 @@ class ExprMethodsImpl implements ProxyHandler<Expr>
  * that accept single parameter.
  * @returns
  */
-function methodBuilder(this: Expr, name: string, ...args: (Expr | LangType)[]): Expr
+function methodBuilder(this: Expr, name: string, ...args: any[]): Expr
 {
     // return a proxy, which implements all expression methods (functions and operations).
+    if (name.startsWith("$"))
+        name = name.substring(1);
+
     return createExprProxy(new MethodExpr(name, this, args));
 }
 
@@ -159,7 +162,7 @@ const enum PrecedenceRank
  * optional first argument (max length or precision). CHAR has optional charset and DECIMAL has
  * two parameters for precision.
  */
-function renderCast(name: string, args: (Expr | LangType)[]): string
+function renderCAST(name: string, args: ExprOrLangType[]): string
 {
     let expr = renderArg(args[0])[0];
     let firstOptionalArg = args[1] ? renderArg(args[1])[0] : undefined;
@@ -202,11 +205,50 @@ function renderCast(name: string, args: (Expr | LangType)[]): string
 
 
 
+/**
+ * Renders CAST function invocation. The name passed is not the method name but rather the name of
+ * the type to cast to. This also determines how to interpret parameters. Many types have an
+ * optional first argument (max length or precision). CHAR has optional charset and DECIMAL has
+ * two parameters for precision.
+ */
+function renderCASE(name: string, args: (ExprOrLangType | ExprOrLangType[])[]): string
+{
+    // there must be at least two argument: the expression under CASE and first WHEN
+    let count = args.length;
+    if (count < 2)
+        return "";
+
+    let s = "CASE " + renderArg(args[0])[0];
+    for (let i = 1; i < count; i++)
+    {
+        // each argument must be a tuple with a value for comparison and the result value. The
+        // first tuple with the undefined value for comparison is treated as the ELSE clause
+        // and the loop ends.
+        let [argCompare, argResult] = args[i] as [ExprOrLangType, ExprOrLangType];
+        if (argCompare)
+            s += ` WHEN ${renderArg(argCompare)[0]} THEN ${argResult}`;
+        else
+        {
+            s += ` ELSE ${argResult}`;
+            break;
+        }
+    }
+
+    return s + " END";
+}
+
+
+
 /** Renders IN and NOT IN operations. */
-const renderIN = (sign: string, args: (Expr | LangType)[]): string =>
+const renderIN = (sign: string, args: ExprOrLangType[]): string =>
     `${renderArg(args[0])[0]} ${sign} (${args.slice(1).map(v => renderArg(v)[0]).join(", ")})`;
 
 
+
+/** Combines Data and language types */
+type ExprOrLangType = Expr | LangType;
+
+type MethodArgs = (ExprOrLangType | ExprOrLangType[])[];
 
 /** Information about function call expression */
 type FuncInfo =
@@ -221,7 +263,7 @@ type FuncInfo =
      * omitted, the standard rendering algorithm is applied (that is, function name with
      * comma-separated parameters in parenthesys)
      */
-    render?: (name: string, args: (Expr | LangType)[]) => string;
+    render?: (name: string, args: MethodArgs) => string;
 }
 
 /** Information about operator expression */
@@ -255,7 +297,7 @@ type OpInfo =
      * omitted, the standard rendering algorithm is applied, which separates parameters by the
      * operator sign.
      */
-    render?: (sign: string, args: (Expr | LangType)[]) => string;
+    render?: (sign: string, args: MethodArgs) => string;
 }
 
 /** Type of information we keep about methods */
@@ -279,19 +321,20 @@ let methods: { [K in keyof IFunctionsAndOperations]?: MethodInfo } = {
     notIn: {type: "o", sign: "NOT IN", rank: PrecedenceRank.COMPARISON, render: renderIN},
     plus: {type: "o", sign: "+", rank: PrecedenceRank.ADDITION},
     times: {type: "o", sign: "*", rank: PrecedenceRank.MULTIPLICATION},
+    case: {type: "o", sign: "CASE", rank: PrecedenceRank.COMPARISON, render: renderCASE},
 
-    toCHAR: {type: "f", render: renderCast},
-    toDATE: {type: "f", render: renderCast},
-    toDATETIME: {type: "f", render: renderCast},
-    toDECIMAL: {type: "f", render: renderCast},
-    toDOUBLE: {type: "f", render: renderCast},
-    toFLOAT: {type: "f", render: renderCast},
-    toNCHAR: {type: "f", render: renderCast},
-    toREAL: {type: "f", render: renderCast},
-    toSIGNED: {type: "f", render: renderCast},
-    toTIME: {type: "f", render: renderCast},
-    toUNSIGNED: {type: "f", render: renderCast},
-    toYEAR: {type: "f", render: renderCast},
+    toCHAR: {type: "f", render: renderCAST},
+    toDATE: {type: "f", render: renderCAST},
+    toDATETIME: {type: "f", render: renderCAST},
+    toDECIMAL: {type: "f", render: renderCAST},
+    toDOUBLE: {type: "f", render: renderCAST},
+    toFLOAT: {type: "f", render: renderCAST},
+    toNCHAR: {type: "f", render: renderCAST},
+    toREAL: {type: "f", render: renderCAST},
+    toSIGNED: {type: "f", render: renderCAST},
+    toTIME: {type: "f", render: renderCAST},
+    toUNSIGNED: {type: "f", render: renderCAST},
+    toYEAR: {type: "f", render: renderCAST},
 }
 
 
@@ -332,7 +375,7 @@ function renderMethodExpr(expr: MethodExpr): [string, PrecedenceRank]
 
 
 /** Renders this expression as a function call */
-function renderFunc(methodName: string, args: (Expr | LangType)[], info?: string | FuncInfo): [string, PrecedenceRank]
+function renderFunc(methodName: string, args: MethodArgs, info?: string | FuncInfo): [string, PrecedenceRank]
 {
     let name = (info && (typeof info === "string" ? info : info.name)) ?? methodName.toUpperCase();
     let renderFunc = info && typeof info !== "string" ? info.render : undefined;
@@ -349,7 +392,7 @@ function renderFunc(methodName: string, args: (Expr | LangType)[], info?: string
 }
 
 /** Renders this expression as an operator expression */
-function renderOp(info: OpInfo, args: (Expr | LangType)[]): [string, PrecedenceRank]
+function renderOp(info: OpInfo, args: MethodArgs): [string, PrecedenceRank]
 {
     let ourRank = info.rank;
     let s: string;
@@ -395,8 +438,18 @@ function renderOp(info: OpInfo, args: (Expr | LangType)[]): [string, PrecedenceR
  * @returns A two element tuple, where the first element is a rendered string and the second tuple
  * is the precedence rank of the rendered expression.
  */
-const renderArg = (arg: Expr | LangType, noQuotes?: boolean): [string, PrecedenceRank] =>
-    arg instanceof Expr ? renderExpr(arg) : [renderLangType(arg, noQuotes), PrecedenceRank.MAX];
+function renderArg(arg: ExprOrLangType | ExprOrLangType[], noQuotes?: boolean): [string, PrecedenceRank]
+{
+    let s: string;
+    if (Array.isArray(arg))
+        s = arg.map(v => renderArg(v, noQuotes)[0]).join(", ");
+    else if (arg instanceof Expr)
+        return renderExpr(arg);
+    else
+        s = renderLangType(arg, noQuotes);
+    
+    return [s, PrecedenceRank.MAX];
+}
 
 
 
@@ -462,23 +515,35 @@ class MethodExpr extends Expr
      * Function parameters or operation operands. In case there are no parameters, this will be
      * an empty array.
      */
-    args: (Expr | LangType)[];
+    args: MethodArgs;
 
-    constructor(name: string, source?: Expr | Expression<any>, args?: ( Expr | Expression<any> | LangType)[])
+    constructor(name: string, source?: Expr, args?: any[])
     {
         super("method");
-        this.name = name.startsWith("$") ? name.substring(1) : name;
+        this.name = name;
 
         // source can be an Expr-based object or a proxy to Expr-based object. We are getting rid of proxies.
         this.source = (source?.[symExpr] ?? source) as Expr;
 
         // each argument can be either an Expr-based object or a proxy to Expr-based object or a
-        // language type. We are getting rid of proxies.
-        this.args = !args ? [] : args.map(arg =>
-            arg instanceof Expr ? (arg?.[symExpr] ?? arg) as Expr : arg as LangType);
+        // language type or an array of those. We are getting rid of proxies.
+        this.args = !args ? [] : removeProxies(args);
     }
 }
 
+
+/** Helper function to remove proxies and leave only Expr instances or language types */
+function removeProxies(args: any[]): MethodArgs
+{
+    return args.map(arg => {
+        if (arg instanceof Expr)
+            return arg?.[symExpr] ?? arg;
+        else if (Array.isArray(arg))
+            return removeProxies(arg);
+        else
+            return arg as LangType;
+    });
+}
 
 
 export function testExpressionAPI(): void
@@ -505,6 +570,8 @@ export function testExpressionAPI(): void
 
         lit("a").$in("a", "b"),
         lit(6).$notIn(5, 6, 7),
+
+        lit(8).$case([1, 1], [lit(2), 4], ["3", 9], [undefined, 8]),
     ];
 
     for (let expression of expressions)

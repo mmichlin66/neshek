@@ -87,7 +87,12 @@ export type NonBoolDataType = StringDataType | NumericDataType | TemporalDataTyp
  */
 export type DataType =
     StringDataType | NumericDataType | TemporalDataType | BoolDataType |
-    "link" | "multilink" | "obj" | "arr";
+    "link" | "multilink" | "obj" | "arr" | "any";
+
+
+
+/** Combines Data and language types */
+export type DataOrLangType = DataType | LangType;
 
 
 

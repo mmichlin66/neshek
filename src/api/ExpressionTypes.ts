@@ -1,5 +1,5 @@
 import {
-    BoolDataType, DataType, LangType, LangTypeOf, NonBoolDataType, NumericDataType,
+    BoolDataType, DataOrLangType, DataType, LangType, LangTypeOf, NonBoolDataType, NumericDataType,
     StringDataType
 } from "./BasicTypes";
 
@@ -10,7 +10,7 @@ import {
  * to represent data types of parameters and return values for operations and functions that can
  * be invoked on expressions.
  */
-export type DataTypeFunc = (...args: (DataType | LangType)[]) => DataType;
+export type DataTypeFunc = (...args: (DataOrLangType | DataOrLangType[])[]) => DataType;
 
 /**
  * Tuple that defines to what data types (specified as a first element) the given function
@@ -25,6 +25,7 @@ export interface IFunctionsAndOperations
 {
     // string functions
     substr: [StringDataType, (start: "int") => StringDataType]
+    like: [StringDataType, (pattern: "str") => "bool"]
     match: [StringDataType, (pattern: "str") => "bool"]
     concat: [StringDataType, (...args: "str"[]) => StringDataType]
 
@@ -38,6 +39,14 @@ export interface IFunctionsAndOperations
     // Boolean functions
     is: [BoolDataType, (arg: "bool") => BoolDataType]
     isNot: [BoolDataType, (arg: "bool") => BoolDataType]
+
+    // General comparison functions
+    eq: [DataType, (arg: DataType) => BoolDataType]
+    ne: [DataType, (arg: DataType) => BoolDataType]
+    lt: [DataType, (arg: DataType) => BoolDataType]
+    lte: [DataType, (arg: DataType) => BoolDataType]
+    gt: [DataType, (arg: DataType) => BoolDataType]
+    gte: [DataType, (arg: DataType) => BoolDataType]
 
     // functions that work on multiple types
     between: [NonBoolDataType, (min: NonBoolDataType, max: NonBoolDataType) => BoolDataType]
@@ -61,6 +70,8 @@ export interface IFunctionsAndOperations
     toTIME: [DataType, (precision?: "int") => "time"]
     toUNSIGNED: [DataType, () => "bigint"]
     toYEAR: [DataType, (precision?: "int") => "year"]
+
+    case: [DataType, (...args: [when: DataType | undefined, result: DataType][]) => DataType]
 }
 
 /**
@@ -86,6 +97,7 @@ export type LangMethodsOf<DT extends DataType> =
  * @typeParam DT DataType detrmining what methods and operations can be invoked on the expression.
  */
 export type Expression<DT extends DataType> =
+    DT extends "any" ? { [N: string]: (...args: any[]) => any } :
     { [N in string & keyof LangMethodsOf<DT> as `$${N}`]-?: LangMethodsOf<DT>[N] }
 
 /**
@@ -102,12 +114,16 @@ export type Expression<DT extends DataType> =
  * [string | Expr<"str">, boolean, (number | Expr<"int">)?]
  * ```
  *
- * @typeParam T A tuple where each element is either a DataType or a LangType or `null` or
- * `undefined`
+ * @typeParam T A tuple where each element is either a DataType or a LangType or an array of
+ * these types.
  */
-export type MappedParamsTuple<T extends (DataType | LangType)[]> =
-    { [i in keyof T]: T[i] extends DataType | undefined
-        ? LangTypeOf<T[i]> | Expression<T[i] & DataType> : T[i] };
+export type MappedParamsTuple<T extends (DataOrLangType | DataOrLangType[])[]> =
+{
+    [i in keyof T]:
+        T[i] extends DataType | undefined ? LangTypeOf<T[i]> | Expression<T[i] & DataType> :
+        T[i] extends Array<DataType | LangType> ? MappedParamsTuple<T[i]> :
+        T[i]
+};
 
 /**
  * Helper type that converts the given function type to a tuple type with elements corresponding
@@ -123,8 +139,8 @@ export type MappedParamsTuple<T extends (DataType | LangType)[]> =
  * [string | Expr<"str">, boolean, (number | Expr<"int">)?]
  * ```
  *
- * @typeParam T A function where each parameter is either a DataType or a LangType or `null` or
- * `undefined`.
+ * @typeParam T A function where each parameter is either a DataType or a LangType or an array of
+ * these types.
  */
 export type DataTypeFuncParams<F extends DataTypeFunc> = MappedParamsTuple<Parameters<F>>;
 
@@ -144,8 +160,8 @@ export type DataTypeFuncParams<F extends DataTypeFunc> = MappedParamsTuple<Param
  * (arg1: string | Expr<"str">, arg2: boolean, arg3: (number | Expr<"int">)?) => Expr<"str">
  * ```
  *
- * @typeParam T A function where each parameter is either a DataType or a LangType or `null` or
- * `undefined`.
+ * @typeParam T A function where each parameter is either a DataType or a LangType or an array of
+ * these types.
  */
 export type LangTypeFunc<F extends DataTypeFunc> =
     (...args: DataTypeFuncParams<F> extends any[] ? DataTypeFuncParams<F> : any[]) => Expression<ReturnType<F>>
