@@ -97,8 +97,9 @@ export type LangMethodsOf<DT extends DataType> =
  * @typeParam DT DataType detrmining what methods and operations can be invoked on the expression.
  */
 export type Expression<DT extends DataType> =
-    DT extends "any" ? { [N: string]: (...args: any[]) => any } :
-    { [N in string & keyof LangMethodsOf<DT> as `$${N}`]-?: LangMethodsOf<DT>[N] }
+    DT extends "any"
+        ? { [N: string]: (...args: any[]) => any }
+        : { [N in string & keyof LangMethodsOf<DT> as `$${N}`]-?: LangMethodsOf<DT>[N] }
 
 /**
  * Helper type that converts the given tuple of DataType or LangType types to a tuple

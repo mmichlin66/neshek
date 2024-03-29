@@ -27,7 +27,7 @@ export function lit<DT extends DataType, LT extends LangTypeOf<DT>>(v: LT, dt?: 
  * name in dotted notation. Accessing properties of the returned object will produce additional
  * variable expressions by adding `.prop_name` to the previous name. Thus `varref("table").id`
  * becomes `table.id` after rendering.
- * 
+ *
  * This function is not intended to be called by developers creating queries - instead it is
  * called by the query infrastructure. It is this infrastructure that casts the returned object
  * to a proper type, so that appropriate properties and expression methods can be called on it.
@@ -278,6 +278,7 @@ const renderIN = (sign: string, args: ExprOrLangType[]): string =>
 /** Combines Data and language types */
 type ExprOrLangType = Expr | LangType;
 
+/** Helper type for parameters of a method representing operation or function expression */
 type MethodArgs = (ExprOrLangType | ExprOrLangType[])[];
 
 /** Information about function call expression */
@@ -458,7 +459,7 @@ function renderOp(info: OpInfo, args: MethodArgs): [string, PrecedenceRank]
                 return s;
         }).join(` ${info.sign} `);
     }
-    
+
     return [s, ourRank];
 }
 
@@ -482,7 +483,7 @@ function renderArg(arg: ExprOrLangType | ExprOrLangType[], noQuotes?: boolean): 
         return renderExpr(arg);
     else
         s = renderLangType(arg, noQuotes);
-    
+
     return [s, PrecedenceRank.MAX];
 }
 
