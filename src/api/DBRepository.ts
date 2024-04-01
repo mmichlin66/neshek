@@ -24,7 +24,7 @@ export class DBRepository<M extends AModel> implements IRepository<M>
 
     createSession(options?: RepoSessionOptions): IRepoSession<M>
     {
-        return new DBRepoSession(this.schema, this.dbAdapter, options);
+        return new DBRepoSession(this.schema, this.dbAdapter, options) as IRepoSession<M>;
     }
 }
 
@@ -58,7 +58,7 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
     {
         try
         {
-            return await this.getR(className, key, propSet) as Entity<M,CN>;
+            return await this.getR(className, key, propSet);
         }
         catch (x)
         {
@@ -128,8 +128,32 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
      * @param query Criteria for retrieving objects.
      */
     async query<CN extends ModelClassName<M>>(className: CN,
-        query?: Query<M, Entity<M,CN>>): Promise<RepoQueryResponse<Entity<M,CN>>>
+        query?: Query<M,CN>): Promise<RepoQueryResponse<Entity<M,CN>>>
     {
+        try
+        {
+            return await this.queryR(className, query);
+        }
+        catch (x)
+        {
+            RepoError.rethrow(x, {source: "Adapter.query"});
+        }
+    }
+
+
+
+    /**
+     * Retrieves multiple objects by the given criteria.
+     * @param className Name of class in the model.
+     * @param query Criteria for retrieving objects.
+     */
+    private async queryR(className: string, query?: AQuery): Promise<RepoQueryResponse<AObject>>
+    {
+        // check whether the class name is valid
+        let classDef = this.schema.classes[className];
+        if (!classDef)
+            RepoError.ClassNotFound(className);
+
         return {elms: []};
     }
 
@@ -140,7 +164,7 @@ export class DBRepoSession<M extends AModel> implements IRepoSession<M>
      * @param className Name of class in the schema
      * @param propValues Values of properties to write to the object.
      */
-    async insert<CN extends ModelClassName<M>>(className: CN, propValues: Entity<M,CN>): Promise<void>
+    async insert(className: string, propValues: AObject): Promise<void>
     {
         // check whether the class name is valid
         let classDef = this.schema.classes[className];

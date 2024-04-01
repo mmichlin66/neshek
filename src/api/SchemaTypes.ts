@@ -1,7 +1,6 @@
-import { DataType, ModelClass, ModelClassPropName } from "./ModelTypes";
 import {
-    MultiLink, ModelClassName, ModelStructName, ModelStruct, NameOfClass,
-    AModel, AClass, EntityKey, Entity, EntityPropName
+    Class, DataType, ModelClassKey, ModelClassPropName, ModelClassProps, MultiLink, ModelClassName,
+    ModelStructName, ModelStruct, NameOfClass, AModel, AClass
 } from "./ModelTypes";
 
 
@@ -112,15 +111,6 @@ export type BoolPropDef = CommonPropDef &
 }
 
 /**
- * Contains attributes defining behavior of a timestamp property
- */
-export type TimestampPropDef = CommonPropDef &
-{
-    dt: "timestamp";
-    precision?: "h" | "m" | "s" | "ms" | "ns";
-}
-
-/**
  * Contains attributes defining behavior of a date-only property
  */
 export type DatePropDef = CommonPropDef &
@@ -144,6 +134,23 @@ export type DateTimePropDef = CommonPropDef &
 {
     dt: "datetime";
     precision?: number;
+}
+
+/**
+ * Contains attributes defining behavior of a TIMESTAMP property
+ */
+export type TimestampPropDef = CommonPropDef &
+{
+    dt: "timestamp";
+    precision?: number;
+}
+
+/**
+ * Contains attributes defining behavior of a YEAR property
+ */
+export type YearPropDef = CommonPropDef &
+{
+    dt: "year";
 }
 
 // /**
@@ -194,7 +201,7 @@ export type AMultiLinkPropDef = CommonPropDef &
 export type MultiLinkPropDef<M extends AModel, C extends AClass> = AMultiLinkPropDef &
 {
     origin: NameOfClass<C>;
-    originKey: string & keyof Entity<M, NameOfClass<C>>;
+    originKey: string & keyof ModelClassProps<M, NameOfClass<C>>;
 }
 
 // /**
@@ -220,14 +227,22 @@ export type APropDef = StringPropDef | DatePropDef | TimePropDef | DateTimePropD
  */
 export type PropDef<M extends AModel, T> = APropDef &
 (
-    T extends string ? StringPropDef | DatePropDef | TimePropDef | DateTimePropDef | TimestampPropDef :
-    T extends number ? IntPropDef | RealPropDef | DecimalPropDef | BitValuePropDef :
-    T extends bigint ? BigIntPropDef | DecimalPropDef | BitValuePropDef :
-    T extends boolean ? BoolPropDef :
-    // T extends Date ? TimestampPropDef :
+    T extends "str" ? StringPropDef :
+    T extends "clob" ? ClobPropDef :
+    T extends "date" ? DatePropDef :
+    T extends "time" ? TimePropDef :
+    T extends "datetime" ? DateTimePropDef :
+    T extends "timestamp" ? TimestampPropDef :
+    T extends "year" ? YearPropDef :
+    T extends "int" ? IntPropDef :
+    T extends "real" ? RealPropDef :
+    T extends "dec" ? DecimalPropDef :
+    T extends "bit" ? BitValuePropDef :
+    T extends "bigint" ? BigIntPropDef :
+    T extends "bool" ? BoolPropDef :
     // T extends Array<infer E> ? ArrayPropDef<M,E> :
     T extends MultiLink<infer C> ? MultiLinkPropDef<M,C> :
-    T extends Entity<M, infer CN> ? CN extends ModelClassName<M>
+    T extends Class<infer CN, any, any> ? CN extends ModelClassName<M>
         ? LinkPropDef<M,CN>
         : never :
     never
@@ -288,17 +303,17 @@ export type ClassDef<M extends AModel, CN extends ModelClassName<M>> = AClassDef
     /**
      * Defenitions of class properties
      */
-    props: { [P in ModelClassPropName<M,CN>]-?: PropDef<M, ModelClass<M,CN>[P]> };
+    props: { [P in ModelClassPropName<M,CN>]-?: PropDef<M, ModelClassProps<M,CN>[P]> };
 
     /**
      * Defines what fields constitute a primary key for the class. The key can be a single field
      * or a collection of fields.
      */
-    key?: (string & keyof EntityKey<M,CN>)[];
+    key?: (string & keyof ModelClassKey<M,CN>)[];
     // the following is commented out although it defines the proper tuple type; however, the
     // correct order of properties in the tuple is non-deterministic and the compiler sometimes
     // fails.
-    // key?: KeysToTuple<EntityKey<M,CN>>;
+    // key?: KeysToTuple<ModelClassKey<M,CN>>;
 }
 
 /**
@@ -313,7 +328,7 @@ export type ASchemaDef =
 /**
  * Represents a Schema, which combines definitions of classes, structures and type aliases.
  */
-export type SchemaDef<M extends AModel> = ASchemaDef &
+export type SchemaDef<M extends AModel> =// ASchemaDef &
 {
     classes: { [CN in ModelClassName<M>]: ClassDef<M, CN> }
     structs: { [SN in ModelStructName<M>]: StructDef<M, SN>}

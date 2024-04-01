@@ -1,5 +1,5 @@
 import {
-    AModel, Entity, EntityKey, EntityPropName, KeyDataType, ModelClassName, MultiLink, ScalarLangType
+    AModel, Class, Entity, EntityKey, EntityPropName, KeyDataType, ModelClassKey, ModelClassName, ModelClassPropName, ModelClassProps, MultiLink, ScalarDataType, ScalarLangType
 } from "./ModelTypes";
 import { AClassDef, APropDef, PropDef } from "./SchemaTypes";
 
@@ -97,7 +97,7 @@ export type ARdbClassHints =
 export type RdbClassHints<M extends AModel, CN extends ModelClassName<M>> = ARdbClassHints &
 {
     /** Hints for individual properties */
-    props?: { [PN in EntityPropName<M,CN>]?: RdbPropHints<M, Entity<M,CN>[PN]> }
+    props?: { [PN in ModelClassPropName<M,CN>]?: RdbPropHints<M, ModelClassProps<M,CN>[PN]> }
 }
 
 
@@ -114,12 +114,10 @@ export type ARdbPropHints = RdbScalarPropHints | ARdbLinkPropHints;
  */
 export type RdbPropHints<M extends AModel, T> = ARdbPropHints &
 (
-    T extends ScalarLangType ? RdbScalarPropHints :
+    T extends ScalarDataType ? RdbScalarPropHints :
     // T extends Array<infer E> ? RDBScalarPropHints :
     T extends MultiLink<any> ? never :
-    T extends Entity<M, infer CN> ? CN extends ModelClassName<M>
-        ? RdbLinkPropHints<EntityKey<M,CN>>
-        : never :
+    T extends Class<any, infer K, any> ? K extends KeyDataType ? RdbLinkPropHints<K> : never :
     //     : T extends StructType ? RDBScalarPropHints : never :
     // T extends StructType ? RDBScalarPropHints :
     never
@@ -154,7 +152,7 @@ export type RdbScalarPropHints = RdbCommonPropHints
  */
 export type ARdbLinkPropHints =
 {
-    [P: string]: RdbScalarPropHints | ARdbLinkPropHints
+    [P: string]: RdbCommonPropHints | ARdbLinkPropHints
 }
 
 /**
@@ -164,11 +162,11 @@ export type ARdbLinkPropHints =
  * actual foreign key may consists of multiple fields. For each of these fields we need to provide
  * field name and type.
  */
-export type RdbLinkPropHints<K extends KeyDataType> = ARdbLinkPropHints &
+export type RdbLinkPropHints<K extends KeyDataType> =// ARdbLinkPropHints &
 {
     [P in string & keyof K]:
-        K[P] extends ScalarLangType ? RdbScalarPropHints :
-        K[P] extends KeyDataType ? RdbLinkPropHints<K[P]> :
+        K[P] extends ScalarDataType ? RdbScalarPropHints :
+        K[P] extends Class<any, infer K1, any> ? K1 extends KeyDataType ? RdbLinkPropHints<K1> : never :
         never
 }
 

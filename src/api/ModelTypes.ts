@@ -113,22 +113,6 @@ export type DataOrLangType = DataType | LangType;
 
 
 
-// /**
-//  * Represents underlying data type corresponding to the given property type
-//  */
-// export type DataTypeOfPropType<M extends AModel, T extends PropType> =
-//     T extends string ? "str" | "clob" | "date" | "time" | "datetime" | "timestamp" :
-//     T extends number ? "int" | "real" | "dec" | "year" :
-//     T extends bigint ? "bigint" | "bit" :
-//     T extends boolean ? "bool" :
-//     T extends MultiLink<AClass> ? "multilink" :
-//     T extends Class<infer CN,any,any> ? CN extends ModelClassName<M>
-//         ? "link"
-//         : never :
-//     never
-
-
-
 /**
  * Represents data type corresponding to the given language type
  */
@@ -191,18 +175,20 @@ export type KeyDataType = { [P: string]: KeyPropDataType }
 // export type StructType = { [P: string]: PropType }
 
 /**
+ * Symbol used only to make some information to be part of multi-link type. This iformation
+ * includes class name, primary key and unique constraints. We use symbol to be able to bypass it while
+ * enumerating with `string & keyof T`.
+ * @internal
+ */
+export const symMultiLink = Symbol();
+
+/**
  * Represents a multi link to a given class.
  */
 export type MultiLink<C extends AClass> =
 {
     /** Array of objects of the given class */
-    elms?: C[];
-
-    /**
-     * Cursor that can be used to retrieve additional objects. If cursor is undefined, there
-     * is no more data.
-     */
-    cursor?: string;
+    readonly [symMultiLink]?: C;
 }
 
 
@@ -343,25 +329,71 @@ export type ModelClasses<M extends AModel> = M["classes"];
 export type ModelClassName<M extends AModel> = string & keyof ModelClasses<M>;
 
 /**
- * Representing the class with the given name from the `Model` type
+ * Represents the class with the given name from the `Model` type
  */
-export type ModelClass<M extends AModel, CN extends ModelClassName<M>> =
-    ModelClasses<M>[CN];
+export type ModelClass<M extends AModel, CN extends ModelClassName<M>> = ModelClasses<M>[CN];
+
+/**
+ * Represents the primary key of the class with the given name from the `Model` type
+ */
+export type ModelClassKey<M extends AModel, CN extends ModelClassName<M>> =
+    ModelClass<M,CN> extends Class<any, infer K, any>
+        ? K extends KeyDataType ? {[P in keyof K]?: K[P]} : {}
+        : {}
+
+/**
+ * Represents the union of all unique constraints (not including the primary key) of the class
+ * with the given name from the `Model` type.
+ */
+export type ModelClassUnique<M extends AModel, CN extends ModelClassName<M>> =
+    ModelClass<M,CN> extends Class<any, any, infer U>
+        ? U extends KeyDataType[]
+            ? Partial<U[number]>
+            : {}
+        : {}
+
+// export type ModelClassUnique<M extends AModel, CN extends ModelClassName<M>> =
+//     ModelClass<M,CN> extends Class<any, any, infer U>
+//         ? U extends KeyDataType[]
+//             ? { [i in keyof U]: {[P in keyof U[i]]?: U[i][P]}}[number]
+//             : {}
+//         : {}
+
+// /**
+//  * Represents the union of all unique constraints (not including the primary key) of the class
+//  * with the given name from the `Model` type.
+//  */
+// export type ModelClassUnique<M extends AModel, CN extends ModelClassName<M>> =
+//     ModelClass<M,CN> extends Class<any, any, infer U>
+//         ? U extends KeyDataType[]
+//             ? UnionToIntersection<{ [i in keyof U]:
+//                 {[P in keyof U[i]]?: U[i][P]}
+//             }[number]>
+//             : {}
+//         : {}
+
+/**
+ * Represents the properties of the given class including those from the key, the unique
+ * constraints and own class properties, mapped to the corresponding type.
+ */
+export type ModelClassProps<M extends AModel, CN extends ModelClassName<M>> =
+    ModelClassKey<M,CN> & UnionToIntersection<ModelClassUnique<M,CN>> &
+    { [PN in string & keyof ModelClass<M,CN>]?: ModelClass<M,CN>[PN] }
 
 /**
  * Represents the union of all property names of the class with the given name from the `Model`
  * type.
  */
 export type ModelClassPropName<M extends AModel, CN extends ModelClassName<M>> =
-    string & keyof ModelClass<M,CN>;
+    string & keyof ModelClassProps<M,CN>;
 
 /**
  * Represents the type of property with the given name of the class with the given name from
  * the given `Model` type.
  */
 export type ModelClassProp<M extends AModel, CN extends ModelClassName<M>,
-        PN extends ModelClassPropName<M,CN>> =
-    ModelClass<M,CN>[PN];
+        PN extends keyof ModelClassProps<M,CN>> =
+    ModelClassProps<M,CN>[PN];
 
 /** Extracts class name type from the given class type */
 export type NameOfClass<C extends AClass> = C extends Class<infer CN,any,any> ? CN : never;
@@ -389,44 +421,31 @@ export type NameOfStruct<S> = S extends Struct<infer SN> ? SN : never;
 
 
 /**
+ * Represents a multi link property pointing to entities of the given class.
+ */
+export type EntityMultiLink<M extends AModel, C extends AClass> =
+{
+    /** Array of objects of the given class */
+    elms?: C extends Class<infer CN, any, any> ? Entity<M,CN>[] : unknown[];
+
+    /**
+     * Cursor that can be used to retrieve additional objects. If cursor is undefined, there
+     * is no more data.
+     */
+    cursor?: string;
+}
+
+
+
+/**
  * Represents property type of the given TypeScript type. If the property is of the Class type,
  * then this returns the corresponding Entity type.
  */
 export type EntityPropType<M extends AModel, T> =
     T extends Class<infer CN, any, any> ? CN extends ModelClassName<M> ? Entity<M,CN> : never :
+    T extends MultiLink<infer C> ? EntityMultiLink<M,C> :
     T extends ScalarDataType ? LangTypeOf<T> :
     never
-
-/**
- * Represents properies derived from the class's primary key definition of the class with the
- * given name from the given model.
- */
-export type ModelClassKeyProps<M extends AModel, CN extends ModelClassName<M>> =
-    ModelClass<M,CN> extends Class<any, infer K, any>
-        ? K extends KeyDataType ? { [P in keyof K]?: EntityPropType<M,K[P]> } : {}
-        : {}
-
-/**
- * Represents properies derived from the class's unique constraint definitions of the class with
- * the given name from the given model.
- */
-export type ModelClassUniqueProps<M extends AModel, CN extends ModelClassName<M>> =
-    ModelClass<M,CN> extends Class<any, any, infer U>
-        ? U extends KeyDataType[]
-            ? UnionToIntersection<{ [i in keyof U]:
-                {[P in keyof U[i]]?: EntityPropType<M,U[i][P]>}
-              }[number]>
-            : {}
-        : {}
-
-/**
- * Represents properies derived from the class's own property definition of the class with the
- * given name from the given model.
- */
-export type ModelClassOwnProps<M extends AModel, CN extends ModelClassName<M>> =
-    ModelClass<M,CN> extends AClass
-        ? { [PN in ModelClassPropName<M,CN>]?: EntityPropType<M,ModelClassProp<M,CN,PN>> }
-        : {}
 
 /**
  * Represents a simple object type with properties taken from the definition of a class with the
@@ -436,7 +455,7 @@ export type ModelClassOwnProps<M extends AModel, CN extends ModelClassName<M>> =
  * - own class properties
  */
 export type Entity<M extends AModel, CN extends ModelClassName<M>> =
-    ModelClassKeyProps<M,CN> & ModelClassUniqueProps<M,CN> & ModelClassOwnProps<M,CN>
+    { [P in keyof ModelClassProps<M,CN>]?: EntityPropType<M, ModelClassProps<M,CN>[P]> }
 
 /**
  * Represents a union of all properties for the entity corresponding to the class with the given
@@ -451,7 +470,7 @@ export type EntityPropName<M extends AModel, CN extends ModelClassName<M>> =
  */
 export type EntityKey<M extends AModel, CN extends ModelClassName<M>> =
     ModelClass<M,CN> extends Class<any, infer K extends KeyDataType, any>
-        ? { [P in string & keyof K]: K[P] extends Class<infer CN1,any,any>
+        ? { [P in keyof K]: K[P] extends Class<infer CN1,any,any>
             ? CN1 extends ModelClassName<M> ? EntityKey<M,CN1> : never
             : K[P] extends DataType ? LangTypeOf<K[P]> : never }
         : never;

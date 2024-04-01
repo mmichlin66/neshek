@@ -63,7 +63,7 @@ export interface IRepoSession<M extends AModel>
      * @param query Criteria for retrieving objects.
      */
     query<CN extends ModelClassName<M>>(className: CN,
-        query?: Query<M, Entity<M,CN>>): Promise<RepoQueryResponse<Entity<M,CN>>>;
+        query?: Query<M,CN>): Promise<RepoQueryResponse<Entity<M,CN>>>;
 
     /**
      * Inserts a new object of the given class with the given field values.

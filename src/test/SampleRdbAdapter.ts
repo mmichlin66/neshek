@@ -79,7 +79,7 @@ export class SampleRdbAdapter extends RdbAdapter
 
 
 
-    /** Stringfies the object by first sorting its keys */
+    /** Stringifies the object by first sorting its keys */
     function flattenFields(fieldObj: Record<string,ScalarLangType>): string
     {
         let fieldNames = Object.keys(fieldObj);

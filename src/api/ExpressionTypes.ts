@@ -1,6 +1,7 @@
 import {
-    BoolDataType, DataOrLangType, DataType, LangType, LangTypeOf, NonBoolDataType, NumericDataType,
-    StringDataType
+    AClass, AModel, BoolDataType, Class, DataOrLangType, DataType, LangType, LangTypeOf,
+    ModelClassName, ModelClassPropName, ModelClassProps, MultiLink, NonBoolDataType, NumericDataType,
+    ScalarDataType, StringDataType
 } from "./ModelTypes";
 
 
@@ -166,6 +167,32 @@ export type DataTypeFuncParams<F extends DataTypeFunc> = MappedParamsTuple<Param
  */
 export type LangTypeFunc<F extends DataTypeFunc> =
     (...args: DataTypeFuncParams<F> extends any[] ? DataTypeFuncParams<F> : any[]) => Expression<ReturnType<F>>
+
+
+
+/**
+ * Represents an object based on the given entity type, whose properties can participate in
+ * filtering operations on objects of the given type. Every property of this "enhanced" type
+ * contains type-appropriate filtering functions.
+ *
+ * **Example:**
+ * ```typescript
+ * // The following query retrieves all items sold for less then the products' MSRPs
+ * // The `item` parameter in the following lambda function is of type `EnhancedEntity<M,"Item">
+ * query("Item", {filter: item => item.price.lt(item.product.msrp)});
+ * ```
+ */
+export type EnhancedEntity<M extends AModel, CN extends ModelClassName<M>> =
+    { [P in ModelClassPropName<M,CN>]-?: EnhancedProp<M, ModelClassProps<M,CN>[P]>}
+
+export type EnhancedProp<M extends AModel, T> =
+    T extends ScalarDataType ? Expression<T> :
+    T extends MultiLink<AClass> ? never :
+    T extends Class<infer CN, any, any> ? EnhancedEntity<M,CN> & {
+        $isNull: () => Expression<BoolDataType>;
+        $isNotNull: () => Expression<BoolDataType>;
+    } :
+    never
 
 
 

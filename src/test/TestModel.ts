@@ -1,13 +1,13 @@
 import {
     ModelClassName, ModelClasses, Model, Class, MultiLink, NameOfClass,
-    Struct, Entity, EntityKey, XOR
+    Struct, Entity, EntityKey, XOR, ModelClassProps, ModelClassKey, ModelClassUnique
 } from "../index";
 
 
 
 export type OrderClass = Class<"Order", {id: "int"}, undefined> &
 {
-    time: "str";
+    time: "datetime";
     items: MultiLink<ItemClass>;
     // note: NoteStruct;
 }
@@ -15,12 +15,12 @@ export type OrderClass = Class<"Order", {id: "int"}, undefined> &
 export type ProductClass = Class<"Product", {code: "str"}, undefined> &
 {
     name: "str";
-    msrp: "real";
+    msrp: "dec";
     items: MultiLink<ItemClass>;
     // notes?: NoteStruct[];
 }
 
-export type ItemClass = Class<"Item", {order: OrderClass, product: ProductClass}, undefined> &
+export type ItemClass = Class<"Item", {order: OrderClass, product: ProductClass}, [{abc: "int"}, {xyz: "str", klm: "bool"}]> &
 {
     qty: "int";
     price: "real";
@@ -38,14 +38,14 @@ export type NoteStruct = Struct<"Note"> &
     text: "str";
 }
 
-export type Person = Class<"Person", {fn: "str", ln: "str", dob: "str"}, undefined> &
+export type PersonClass = Class<"Person", {fn: "str", ln: "str", dob: "str"}, undefined> &
 {
     address: "str";
     phone: "str";
 }
 
 export type MyModel = Model<
-    [OrderClass, ProductClass, ItemClass, ExtraItemInfoClass, Person],
+    [OrderClass, ProductClass, ItemClass, ExtraItemInfoClass, PersonClass],
     [NoteStruct]
 >;
 
@@ -53,15 +53,26 @@ export type MyModel = Model<
 
 function test(): void
 {
+    let itemClassKey: ModelClassKey<MyModel, "Item">;
+    let itemClassUnique: ModelClassUnique<MyModel, "Item"> = {abc: "int", xyz: "str", klm: "bool"};
+    let itemClassProps: ModelClassProps<MyModel,"Item"> = {};
+    itemClassProps.order;
+    itemClassProps.product;
+    itemClassProps.price;
+    itemClassProps.qty;
+    itemClassProps.abc;
+    itemClassProps.xyz;
+    itemClassProps.klm;
+
     let classes: ModelClasses<MyModel>;
     let classNames: ModelClassName<MyModel> = "Item";
     let order: Entity<MyModel, "Order"> = {id: 123};
     let orderName: NameOfClass<OrderClass> = "Order";
     let orderKey: EntityKey<MyModel, "Order"> = {id: 123};
-    let product: Entity<MyModel, "Product"> = {code: "123", msrp: 35.99, name: "desk", };
+    let product: Entity<MyModel, "Product"> = {code: "123", msrp: 35.99, name: "desk", items: {elms: [], cursor: undefined} };
     let productName: NameOfClass<ProductClass> = "Product";
     let productKey:  EntityKey<MyModel, "Product"> = {code: "123"};
-    let item: Entity<MyModel, "Item"> = {order: {id: 123}, product: {code: "123"}, price: 30.99};
+    let item: Entity<MyModel, "Item"> = {order: {id: 123}, product: {code: "123"}, price: 30.99, abc: 1, xyz: "", klm: true};
     let itemName: NameOfClass<ItemClass> = "Item";
     let itemKey:  EntityKey<MyModel, "Item"> = {order: {id: 123}, product: {code: "123"}};
     let extraItemInfo: Entity<MyModel, "ExtraItemInfo"> =

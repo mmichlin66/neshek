@@ -7,7 +7,7 @@ export let mySchema: SchemaDef<MyModel> = {
         Order : {
             props: {
                 id: {dt: "int", required: true},
-                time: {dt: "timestamp", precision: "s"},
+                time: {dt: "datetime", precision: 3},
                 items: {dt: "multilink", origin: "Item", originKey: "order"},
                 // note: {dt: "obj", name: "Note"}
             },
@@ -29,6 +29,9 @@ export let mySchema: SchemaDef<MyModel> = {
                 product: {dt: "link", target: "Product"},
                 qty: {dt: "int", min: 0},
                 price: {dt: "real", min: 0},
+                abc: {dt: "int"},
+                xyz: {dt: "str"},
+                klm: {dt: "bool"},
                 // managerNotes: {dt: "obj", props: {manager: {dt: "str"}, note: {dt: "obj", name: "Note"}}}
             },
             key: ["order", "product"],

@@ -82,9 +82,9 @@ let extraItemInfo = await session.get("ExtraItemInfo", {item: {order: {id: 123},
 // @ts-expect-error (Note is not a class)
 let note = await session.get("Note", {id: 123});
 
-let items = await session.query("Item", {filter: item => item.price.$eq(item.product.msrp)});
+let items = await session.query("Item", {filter: item => item.price.$lt(item.product.msrp)});
 items = await session.query("Item", {filter: item => item.price.$eq(9.95)});
-items = await session.query("Item", {filter: item => item.order.$isDefined()});
+items = await session.query("Item", {filter: item => item.order.$isNotNull()});
 
 
 
