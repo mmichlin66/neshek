@@ -1,7 +1,7 @@
 import {
     BoolDataType, DataOrLangType, DataType, LangType, LangTypeOf, NonBoolDataType, NumericDataType,
     StringDataType
-} from "./BasicTypes";
+} from "./ModelTypes";
 
 
 

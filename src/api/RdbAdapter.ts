@@ -1,4 +1,4 @@
-import { ScalarType } from "./ModelTypes";
+import { ScalarLangType } from "./ModelTypes";
 import {
     AClassDef, APropDef, ASchemaDef, ALinkPropDef, StringPropDef, BoolPropDef, IntPropDef
 } from "./SchemaTypes";
@@ -290,7 +290,7 @@ export abstract class RdbAdapter implements IDBAdapter
      * @param keyFieldValues Primary key field values.
      * @param fieldNames Names of the fields to retrieve.
      */
-    protected abstract getObject(tableName: string, keyFieldValues: Record<string,ScalarType>,
+    protected abstract getObject(tableName: string, keyFieldValues: Record<string,ScalarLangType>,
         fieldNames: string[]): Promise<AObject | null>;
 
 
@@ -339,7 +339,7 @@ function convertNamesPropsToFields(cls: RdbClass, propNames: string[]): string[]
  */
 function convertValuesPropsToFields(cls: RdbClass, propValues: AObject): AObject
 {
-    let fieldValues: Record<string,ScalarType> = {}
+    let fieldValues: Record<string,ScalarLangType> = {}
     for (let propName in propValues)
     {
         // get the field description; if undefined, it's a multi-link and we just skip it.

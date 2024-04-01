@@ -1,4 +1,4 @@
-import { ScalarType, MultiLink, AModel, NameOfClass, Entity, EntityPropName } from "./ModelTypes"
+import { ScalarLangType, MultiLink, AModel, NameOfClass, Entity, EntityPropName } from "./ModelTypes"
 import { StringKey, StringKeys } from "./UtilTypes";
 
 
@@ -66,7 +66,7 @@ export type PropSet<M extends AModel, T, TAllowFilters extends boolean> =
         undefined | StringKey<T> | StringKeys<T> | "*" | (
             {
                 [P in keyof T & string]?:
-                    T[P] extends ScalarType | undefined
+                    T[P] extends ScalarLangType | undefined
                         ? TAllowFilters extends true ? T[P] | undefined : undefined
                         : PropSet<M, T[P], TAllowFilters>
             } &
@@ -150,13 +150,13 @@ export type AFilterBase = FilterBase<string>;
 
 export type NoArgFilter<O extends string> = FilterBase<O>
 
-export type OneArgFilter<O extends string, T extends ScalarType> = FilterBase<O> &
+export type OneArgFilter<O extends string, T extends ScalarLangType> = FilterBase<O> &
 {
     /** Single argument */
     arg: T;
 }
 
-export type TwoArgFilter<O extends string, T extends ScalarType> = FilterBase<O> &
+export type TwoArgFilter<O extends string, T extends ScalarLangType> = FilterBase<O> &
 {
     /** First argument */
     arg1: T;

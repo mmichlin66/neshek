@@ -5,43 +5,43 @@ import {
 
 
 
-export type OrderClass = Class<"Order", {id: number}, undefined> &
+export type OrderClass = Class<"Order", {id: "int"}, undefined> &
 {
-    time: string;
+    time: "str";
     items: MultiLink<ItemClass>;
     // note: NoteStruct;
 }
 
-export type ProductClass = Class<"Product", {code: string}, undefined> &
+export type ProductClass = Class<"Product", {code: "str"}, undefined> &
 {
-    name: string;
-    msrp: number;
+    name: "str";
+    msrp: "real";
     items: MultiLink<ItemClass>;
     // notes?: NoteStruct[];
 }
 
 export type ItemClass = Class<"Item", {order: OrderClass, product: ProductClass}, undefined> &
 {
-    qty: number;
-    price: number;
+    qty: "int";
+    price: "real";
     // managerNotes?: {manager: string, note: NoteStruct}
 }
 
 export type ExtraItemInfoClass = Class<"ExtraItemInfo", {item: ItemClass}, undefined> &
 {
-    comments?: string;
+    comments?: "str";
 }
 
 export type NoteStruct = Struct<"Note"> &
 {
-    time?: number;
-    text?: string;
+    time: "int";
+    text: "str";
 }
 
-export type Person = Class<"Person", {fn: string, ln: string, dob: string}, undefined> &
+export type Person = Class<"Person", {fn: "str", ln: "str", dob: "str"}, undefined> &
 {
-    address: string;
-    phone: string;
+    address: "str";
+    phone: "str";
 }
 
 export type MyModel = Model<

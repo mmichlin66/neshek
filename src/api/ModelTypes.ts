@@ -1,9 +1,164 @@
 import { UnionToIntersection } from "./UtilTypes";
 
+
+
 /**
- * Represents simple scalar types allowed for object properties.
+ * Represents simple language scalar types allowed for object properties.
  */
-export type ScalarType = string | number| bigint | boolean ;
+export type ScalarLangType = string | number| bigint | boolean;
+
+/**
+ * Represents NULL language types. This just combines `null` and `undefined`.
+ */
+export type NullLangType = null | undefined;
+
+/**
+ * Represents language-specific scalar types used to work with class properties.
+ */
+export type LangType = ScalarLangType | {[P: string]: LangType} | LangType[] | NullLangType;
+
+
+
+/**
+ * Represents data types corresponding to string property types:
+ *   - "str" - string
+ *   - "clob" - character-based large object
+ */
+export type StringDataType = "str" | "clob";
+
+/**
+ * Represents data types corresponding to temporal property types:
+ *   - "date" - date only
+ *   - "time" - time only
+ *   - "datetime" - datetime
+ *   - "timestamp" - timestamp
+ */
+export type TemporalDataType = "date" | "time" | "datetime" | "timestamp";
+
+/**
+ * Represents underlying data types corresponding to integer property types:
+ *   - "int" - signed or unsigned integer of different sizes
+ *   - "bigint" - signed or unsigned integer of different sizes
+ *   - "bit" - bit-values
+ *   - "year" - 4-digit year
+ */
+export type IntegerDataType = "int" | "bigint" | "bit" | "year";
+
+/**
+ * Represents underlying data types corresponding to real (floating or fixed point) property types:
+ *   - "real" - floating-point numbers of single or double precision
+ *   - "dec" - fixed-point numbers (DECIMAL/NUMERIC)
+ */
+export type RealDataType = "real" | "dec"
+
+/**
+ * Represents underlying data types corresponding to big integer property types:
+ *   - "bigint" - signed or unsigned integer of different sizes
+ *   - "bit" - bit-values
+ */
+export type BigintDataType = "bigint" | "bit";
+
+/**
+ * Combines integer and real data types in one definition for convenience
+ */
+export type NumericDataType = IntegerDataType | RealDataType
+
+/**
+ * Represents underlying data types corresponding to Boolean property types:
+ *   - "bool" - boolean
+ */
+export type BoolDataType ="bool";
+
+/**
+ * Represents underlying data types corresponding to any property types except Boolean:
+ */
+export type NonBoolDataType = StringDataType | NumericDataType | TemporalDataType;
+
+/**
+ * Combines data types representing scalar values.
+ */
+export type ScalarDataType = StringDataType | NumericDataType | TemporalDataType | BoolDataType;
+
+/**
+ * Represents underlying data types corresponding to property types:
+ * - string properties:
+ *   - "str" - string
+ *   - "clob" - character-based large object
+ *   - "date" - date only
+ *   - "time" - time only
+ *   - "datetime" - datetime
+ *   - "timestamp" - timestamp
+ * - numeric properties
+ *   - "int" - signed or unsigned integer of different sizes
+ *   - "real" - floating-point numbers of single or double precision
+ *   - "dec" - fixed-point numbers (DECIMAL/NUMERIC)
+ *   - "year" - 4-digit year
+ * - bigint properties
+ *   - "bigint" - signed or unsigned integer of different sizes
+ *   - "bit" - bit-values
+ * - boolean properties
+ *   - "bool" - boolean
+ * - Special properties
+ *   - "link" - single link
+ *   - "multilink" - multi-link
+ *   - "obj" - structured object
+ *   - "arr" - array
+ */
+export type DataType = ScalarDataType | "link" | "multilink" | "obj" | "arr" | "any";
+
+
+
+/** Combines Data and language types */
+export type DataOrLangType = DataType | LangType;
+
+
+
+// /**
+//  * Represents underlying data type corresponding to the given property type
+//  */
+// export type DataTypeOfPropType<M extends AModel, T extends PropType> =
+//     T extends string ? "str" | "clob" | "date" | "time" | "datetime" | "timestamp" :
+//     T extends number ? "int" | "real" | "dec" | "year" :
+//     T extends bigint ? "bigint" | "bit" :
+//     T extends boolean ? "bool" :
+//     T extends MultiLink<AClass> ? "multilink" :
+//     T extends Class<infer CN,any,any> ? CN extends ModelClassName<M>
+//         ? "link"
+//         : never :
+//     never
+
+
+
+/**
+ * Represents data type corresponding to the given language type
+ */
+export type DataTypeOf<T extends LangType> =
+    // T extends SqlTime ? "time" :
+    T extends string ? "str" | "clob" | "date" | "time" | "datetime" | "timestamp" :
+    T extends number ? "int" | "real" | "dec" | "year" :
+    T extends bigint ? "bigint" | "bit" :
+    T extends boolean ? "bool" :
+    T extends Array<LangType> ? "multilink" | "arr" :
+    T extends Record<string,LangType> ? "link" | "obj" :
+    undefined
+
+
+
+/**
+ * Maps data types to language types used to represent them.
+ */
+export type LangTypeOf<DT extends DataType | undefined | null> =
+    DT extends StringDataType | TemporalDataType ? string :
+    DT extends BigintDataType ? bigint : // this line must be before NumericDataType to take effect
+    DT extends NumericDataType ? number :
+    DT extends BoolDataType ? boolean :
+    DT extends undefined ? undefined :
+    DT extends null ? null :
+    DT extends "multilink" | "arr" ? LangType[] :
+    DT extends "link" | "obj" ? Record<string,LangType> :
+    never;
+
+
 
 /**
  * Represents possible types of properties in primary keys and unique constraints. These can be
@@ -11,23 +166,23 @@ export type ScalarType = string | number| bigint | boolean ;
  * - Simple scalar types: string, number, boolean, bigint and Date
  * - Class types, which represent single links
  */
-export type KeyPropType = ScalarType | AClass;
+export type KeyPropDataType = ScalarDataType | AClass;
 
 /**
  * Represents a structure (object) where keys are strings and values are one of the property types
  * allowed in primary keys and unique constraints.
  */
-export type KeyType = { [P: string]: KeyPropType }
+export type KeyDataType = { [P: string]: KeyPropDataType }
 
-/**
- * Represents possible types of object properties, which include types used for primary keys and
- * unique constraints as well as the following additional types:
- * - Multi-links
- * - Array of any types
- * - Structure containing fields of any types
- */
-export type PropType = ScalarType | AClass | MultiLink<AClass>;
-// export type PropType = KeyPropType | Array<PropType> | MultiLink<AClass> | StructType;
+// /**
+//  * Represents possible types of object properties, which include types used for primary keys and
+//  * unique constraints as well as the following additional types:
+//  * - Multi-links
+//  * - Array of any types
+//  * - Structure containing fields of any types
+//  */
+// export type PropType = ScalarLangType | Entity<AModel,ModelClassName<AModel>> | MultiLink<AClass>;
+// // export type PropType = KeyPropType | Array<PropType> | MultiLink<AClass> | StructType;
 
 // /**
 //  * Represents a structure (object) where keys are strings and values are one of the allowed
@@ -54,8 +209,8 @@ export type MultiLink<C extends AClass> =
 
 /**
  * Symbol used only to make some information to be part of class type. This iformation includes
- * class name, primary key and unique constraints. We use symbol to be able to not enumerate it
- * using `string & keyof T`.
+ * class name, primary key and unique constraints. We use symbol to be able to bypass it while
+ * enumerating with `string & keyof T`.
  * @internal
  */
 export const symClass = Symbol();
@@ -67,12 +222,12 @@ export const symClass = Symbol();
  * repository. Usually this name is the same as the TypeScript class name.
  * @typeParam K Type representing the primary key of the class. All properties of this type
  * become properties of the class, so they should not be repeated in the type body. If the class
- * doesn't have primary key, specify `{}`, which is also a default of this parameter.
- * @typeParam U Type representing unique constraints of the class. Properties of all
- * constraints become properties of the class, so they should not be repeated in the type body.
- * If the class doesn't have primary key, specify `[]`, which is also a default of this parameter.
+ * doesn't have primary key, specify `undefined`.
+ * @typeParam U Type representing unique constraints of the class (not including the primary key).
+ * Properties of all constraints become properties of the class, so they should not be repeated in
+ * the type body. If the class doesn't have unique constraints, specify `undefined`.
  */
-export type Class<CN extends string, K extends KeyType | undefined, U extends KeyType[] | undefined> =
+export type Class<CN extends string, K extends KeyDataType | undefined, U extends KeyDataType[] | undefined> =
 {
     readonly [symClass]?: {
         name: CN,
@@ -85,7 +240,7 @@ export type Class<CN extends string, K extends KeyType | undefined, U extends Ke
  * Helper type with all template parameters set to default types. This is needed for easier
  * referencing in other type definitions.
  */
-export type AClass = Class<string, KeyType | undefined, KeyType[] | undefined>
+export type AClass = Class<string, KeyDataType | undefined, KeyDataType[] | undefined>
 
 /**
  * Transforms array of Neshek class types into object type where keys are class names and
@@ -238,9 +393,9 @@ export type NameOfStruct<S> = S extends Struct<infer SN> ? SN : never;
  * then this returns the corresponding Entity type.
  */
 export type EntityPropType<M extends AModel, T> =
-    T extends Class<infer CN, any, any>
-        ? CN extends ModelClassName<M> ? Entity<M,CN> : never
-        : T
+    T extends Class<infer CN, any, any> ? CN extends ModelClassName<M> ? Entity<M,CN> : never :
+    T extends ScalarDataType ? LangTypeOf<T> :
+    never
 
 /**
  * Represents properies derived from the class's primary key definition of the class with the
@@ -248,7 +403,7 @@ export type EntityPropType<M extends AModel, T> =
  */
 export type ModelClassKeyProps<M extends AModel, CN extends ModelClassName<M>> =
     ModelClass<M,CN> extends Class<any, infer K, any>
-        ? K extends KeyType ? { [P in keyof K]?: EntityPropType<M,K[P]> } : {}
+        ? K extends KeyDataType ? { [P in keyof K]?: EntityPropType<M,K[P]> } : {}
         : {}
 
 /**
@@ -257,7 +412,7 @@ export type ModelClassKeyProps<M extends AModel, CN extends ModelClassName<M>> =
  */
 export type ModelClassUniqueProps<M extends AModel, CN extends ModelClassName<M>> =
     ModelClass<M,CN> extends Class<any, any, infer U>
-        ? U extends KeyType[]
+        ? U extends KeyDataType[]
             ? UnionToIntersection<{ [i in keyof U]:
                 {[P in keyof U[i]]?: EntityPropType<M,U[i][P]>}
               }[number]>
@@ -295,9 +450,9 @@ export type EntityPropName<M extends AModel, CN extends ModelClassName<M>> =
  * object links (if links are part of the key) until scalar values are found.
  */
 export type EntityKey<M extends AModel, CN extends ModelClassName<M>> =
-    ModelClass<M,CN> extends Class<any, infer K, any>
+    ModelClass<M,CN> extends Class<any, infer K extends KeyDataType, any>
         ? { [P in string & keyof K]: K[P] extends Class<infer CN1,any,any>
             ? CN1 extends ModelClassName<M> ? EntityKey<M,CN1> : never
-            : K[P] }
+            : K[P] extends DataType ? LangTypeOf<K[P]> : never }
         : never;
 

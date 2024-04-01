@@ -1,4 +1,4 @@
-import { DataType } from "./BasicTypes";
+import { DataType, ModelClass, ModelClassPropName } from "./ModelTypes";
 import {
     MultiLink, ModelClassName, ModelStructName, ModelStruct, NameOfClass,
     AModel, AClass, EntityKey, Entity, EntityPropName
@@ -288,7 +288,7 @@ export type ClassDef<M extends AModel, CN extends ModelClassName<M>> = AClassDef
     /**
      * Defenitions of class properties
      */
-    props: { [P in EntityPropName<M,CN>]-?: PropDef<M, Entity<M,CN>[P]> };
+    props: { [P in ModelClassPropName<M,CN>]-?: PropDef<M, ModelClass<M,CN>[P]> };
 
     /**
      * Defines what fields constitute a primary key for the class. The key can be a single field

@@ -1,5 +1,5 @@
 import {
-    AModel, Entity, EntityKey, EntityPropName, KeyType, ModelClassName, MultiLink, ScalarType
+    AModel, Entity, EntityKey, EntityPropName, KeyDataType, ModelClassName, MultiLink, ScalarLangType
 } from "./ModelTypes";
 import { AClassDef, APropDef, PropDef } from "./SchemaTypes";
 
@@ -114,7 +114,7 @@ export type ARdbPropHints = RdbScalarPropHints | ARdbLinkPropHints;
  */
 export type RdbPropHints<M extends AModel, T> = ARdbPropHints &
 (
-    T extends ScalarType ? RdbScalarPropHints :
+    T extends ScalarLangType ? RdbScalarPropHints :
     // T extends Array<infer E> ? RDBScalarPropHints :
     T extends MultiLink<any> ? never :
     T extends Entity<M, infer CN> ? CN extends ModelClassName<M>
@@ -164,11 +164,11 @@ export type ARdbLinkPropHints =
  * actual foreign key may consists of multiple fields. For each of these fields we need to provide
  * field name and type.
  */
-export type RdbLinkPropHints<K extends KeyType> = ARdbLinkPropHints &
+export type RdbLinkPropHints<K extends KeyDataType> = ARdbLinkPropHints &
 {
     [P in string & keyof K]:
-        K[P] extends ScalarType ? RdbScalarPropHints :
-        K[P] extends KeyType ? RdbLinkPropHints<K[P]> :
+        K[P] extends ScalarLangType ? RdbScalarPropHints :
+        K[P] extends KeyDataType ? RdbLinkPropHints<K[P]> :
         never
 }
 

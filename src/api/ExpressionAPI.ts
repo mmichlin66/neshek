@@ -1,4 +1,4 @@
-import { DataType, DataTypeOf, LangType, LangTypeOf } from "./BasicTypes";
+import { DataType, DataTypeOf, LangType, LangTypeOf } from "./ModelTypes";
 import { Expression, IFunctionsAndOperations } from "./ExpressionTypes";
 
 

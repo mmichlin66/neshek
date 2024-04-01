@@ -1,4 +1,4 @@
-import { AObject, RdbAdapter, RdbError, ScalarType } from "../index"
+import { AObject, RdbAdapter, RdbError, ScalarLangType } from "../index"
 
 
 
@@ -19,7 +19,7 @@ export class SampleRdbAdapter extends RdbAdapter
     /**
      * Retrieves the requested fields of the object from the given table identified by the given key.
      */
-    protected async getObject(tableName: string, keyFieldValues: Record<string,ScalarType>,
+    protected async getObject(tableName: string, keyFieldValues: Record<string,ScalarLangType>,
         fieldNames: string[]): Promise<AObject | null>
     {
         let map = this.objects.get(tableName);
@@ -31,7 +31,7 @@ export class SampleRdbAdapter extends RdbAdapter
         if (!obj)
             return null;
 
-        let objToReturn: Record<string,ScalarType> = {};
+        let objToReturn: Record<string,ScalarLangType> = {};
         for (let field of fieldNames)
             objToReturn[field] = obj[field];
 
@@ -43,7 +43,7 @@ export class SampleRdbAdapter extends RdbAdapter
     /**
      * Inserts a new object with the given values to the given table
      */
-    protected async insertObject(tableName: string, fieldValues: Record<string,ScalarType>,
+    protected async insertObject(tableName: string, fieldValues: Record<string,ScalarLangType>,
         keyFieldNames: string[]): Promise<void>
     {
         // create key object
@@ -68,7 +68,7 @@ export class SampleRdbAdapter extends RdbAdapter
         }
 
         // copy field values into a new object
-        let obj: Record<string,ScalarType> = {}
+        let obj: Record<string,ScalarLangType> = {}
         for (let fieldName in fieldValues)
             obj[fieldName] = fieldValues[fieldName];
 
@@ -80,7 +80,7 @@ export class SampleRdbAdapter extends RdbAdapter
 
 
     /** Stringfies the object by first sorting its keys */
-    function flattenFields(fieldObj: Record<string,ScalarType>): string
+    function flattenFields(fieldObj: Record<string,ScalarLangType>): string
     {
         let fieldNames = Object.keys(fieldObj);
         if (fieldNames.length === 0)
