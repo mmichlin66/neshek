@@ -1,6 +1,6 @@
 import {
     Class, DataType, ModelClassKey, ModelClassPropName, ModelClassProps, MultiLink, ModelClassName,
-    ModelStructName, ModelStruct, NameOfClass, AModel, AClass
+    ModelStructName, ModelStruct, NameOfClass, AModel, AClass, Struct, StructDataType
 } from "./ModelTypes";
 
 
@@ -153,14 +153,14 @@ export type YearPropDef = CommonPropDef &
     dt: "year";
 }
 
-// /**
-//  * Contains attributes defining behavior of a structure property
-//  */
-// export type ArrayPropDef<M extends AModel, E> = CommonPropDef &
-// {
-//     dt: "arr";
-//     elm: PropDef<M, E>;
-// }
+/**
+ * Contains attributes defining behavior of a structure property
+ */
+export type ArrayPropDef<M extends AModel, E> = CommonPropDef &
+{
+    dt: "arr";
+    elm: PropDef<M, E>;
+}
 
 /**
  * Helper type with all template parameters set to `any`. This is needed for easier referencing
@@ -198,21 +198,25 @@ export type AMultiLinkPropDef = CommonPropDef &
  * corresponding single link.
  *
  */
-export type MultiLinkPropDef<M extends AModel, C extends AClass> = AMultiLinkPropDef &
+export type MultiLinkPropDef<M extends AModel, CN extends ModelClassName<M>> = AMultiLinkPropDef &
 {
-    origin: NameOfClass<C>;
-    originKey: string & keyof ModelClassProps<M, NameOfClass<C>>;
+    origin: CN;
+    originKey: string & keyof ModelClassProps<M,CN>;
 }
+// export type MultiLinkPropDef<M extends AModel, C extends AClass> = AMultiLinkPropDef &
+// {
+//     origin: NameOfClass<C>;
+//     originKey: string & keyof ModelClassProps<M, NameOfClass<C>>;
+// }
 
-// /**
-//  * Contains attributes defining behavior of a structure property
-//  */
-// export type StructPropDef<M extends AModel, T> = CommonPropDef & {dt: "obj"} & (
-//     T extends Struct<infer TName> ? TName extends keyof M["structs"]
-//         ? {name: TName}
-//         : T extends StructType ? {props: StructDef<M, T>} : never :
-//     T extends StructType ? {props: StructDef<M, T>} :
-//     never)
+/**
+ * Contains attributes defining behavior of a structure property
+ */
+export type StructPropDef<M extends AModel, T> = CommonPropDef & {dt: "obj"} & (
+    T extends Struct<infer TName> ? TName extends ModelStructName<M> ? {name: TName} : never :
+    T extends StructDataType ? {props: StructDef<M, T>} :
+    never
+)
 
 /**
  * Helper type with all template parameters set to `any`. This is needed for easier referencing
@@ -220,12 +224,12 @@ export type MultiLinkPropDef<M extends AModel, C extends AClass> = AMultiLinkPro
  */
 export type APropDef = StringPropDef | DatePropDef | TimePropDef | DateTimePropDef |
     IntPropDef | BigIntPropDef | RealPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef |
-    BoolPropDef | ALinkPropDef | AMultiLinkPropDef;
+    BoolPropDef | ArrayPropDef<AModel,any> | ALinkPropDef | AMultiLinkPropDef;
 
 /**
  * Represents attributes defining behavior of a property of a given type.
  */
-export type PropDef<M extends AModel, T> = APropDef &
+export type PropDef<M extends AModel, T> =
 (
     T extends "str" ? StringPropDef :
     T extends "clob" ? ClobPropDef :
@@ -240,11 +244,11 @@ export type PropDef<M extends AModel, T> = APropDef &
     T extends "bit" ? BitValuePropDef :
     T extends "bigint" ? BigIntPropDef :
     T extends "bool" ? BoolPropDef :
-    // T extends Array<infer E> ? ArrayPropDef<M,E> :
-    T extends MultiLink<infer C> ? MultiLinkPropDef<M,C> :
+    T extends Array<infer E> ? ArrayPropDef<M,E> :
+    T extends MultiLink<infer C> ? C extends Class<infer CN, any, any>
+        ? CN extends ModelClassName<M> ? MultiLinkPropDef<M,CN> : never : never :
     T extends Class<infer CN, any, any> ? CN extends ModelClassName<M>
-        ? LinkPropDef<M,CN>
-        : never :
+        ? LinkPropDef<M,CN> : never :
     never
 );
 
@@ -260,7 +264,7 @@ export type AStructDef = { [P: string]: APropDef }
  * serve as a "base" for a class. In the latter case, the class will have all the proprties
  * that the structure defines.
  */
-export type StructDef<M extends AModel, SN extends ModelStructName<M>> = AStructDef &
+export type StructDef<M extends AModel, SN extends ModelStructName<M>> =
 {
     [P in string & keyof ModelStruct<M,SN>]-?: PropDef<M, ModelStruct<M,SN>[P]>
 }
@@ -293,7 +297,7 @@ export type AClassDef =
 /**
  * Represents definition of a class with proper template parameters.
  */
-export type ClassDef<M extends AModel, CN extends ModelClassName<M>> = AClassDef &
+export type ClassDef<M extends AModel, CN extends ModelClassName<M>> =
 {
     /**
      * Defines one or more base classes or structures.
@@ -314,6 +318,12 @@ export type ClassDef<M extends AModel, CN extends ModelClassName<M>> = AClassDef
     // correct order of properties in the tuple is non-deterministic and the compiler sometimes
     // fails.
     // key?: KeysToTuple<ModelClassKey<M,CN>>;
+
+    /**
+     * If the class is declared abstract, no instances of it can be created in the repository.
+     * It can only be used as a base for other classes.
+     */
+    abstract?: boolean;
 }
 
 /**
@@ -328,7 +338,7 @@ export type ASchemaDef =
 /**
  * Represents a Schema, which combines definitions of classes, structures and type aliases.
  */
-export type SchemaDef<M extends AModel> =// ASchemaDef &
+export type SchemaDef<M extends AModel> = ASchemaDef &
 {
     classes: { [CN in ModelClassName<M>]: ClassDef<M, CN> }
     structs: { [SN in ModelStructName<M>]: StructDef<M, SN>}

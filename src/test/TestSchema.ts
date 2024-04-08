@@ -50,7 +50,7 @@ export let mySchema: SchemaDef<MyModel> = {
                 ln: {dt: "str"},
                 dob: {dt: "str"},
                 address: {dt: "str"},
-                phone: {dt: "str"},
+                phones: {dt: "arr", elm: {dt: "str"}},
             },
             key: ["fn", "ln", "dob"],
         },

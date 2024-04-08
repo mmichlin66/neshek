@@ -1,6 +1,6 @@
 import {
     ModelClassName, ModelClasses, Model, Class, MultiLink, NameOfClass,
-    Struct, Entity, EntityKey, XOR, ModelClassProps, ModelClassKey, ModelClassUnique
+    Struct, Entity, EntityKey, XOR, ModelClassProps, ModelClassKey, ModelClassUnique, ArrayPropDef, PropDef
 } from "../index";
 
 
@@ -41,7 +41,7 @@ export type NoteStruct = Struct<"Note"> &
 export type PersonClass = Class<"Person", {fn: "str", ln: "str", dob: "str"}, undefined> &
 {
     address: "str";
-    phone: "str";
+    phones: "str"[];
 }
 
 export type MyModel = Model<
@@ -88,6 +88,9 @@ function test(): void
 
     // let structs: ModelStructs<MyModel>;
     // let structNames: ModelStructName<MyModel> = "Note";
+
+    let arr: ArrayPropDef<MyModel, "str"> = {dt: "arr", elm: {dt: "str"}}
+    let arr1: PropDef<MyModel, "str"[]> = {dt: "arr", elm: {dt: "str"}}
 }
 
 

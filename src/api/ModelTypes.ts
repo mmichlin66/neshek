@@ -158,21 +158,21 @@ export type KeyPropDataType = ScalarDataType | AClass;
  */
 export type KeyDataType = { [P: string]: KeyPropDataType }
 
-// /**
-//  * Represents possible types of object properties, which include types used for primary keys and
-//  * unique constraints as well as the following additional types:
-//  * - Multi-links
-//  * - Array of any types
-//  * - Structure containing fields of any types
-//  */
+/**
+ * Represents possible types of object properties, which include types used for primary keys and
+ * unique constraints as well as the following additional types:
+ * - Multi-links
+ * - Array of any types
+ * - Structure containing fields of any types
+ */
 // export type PropType = ScalarLangType | Entity<AModel,ModelClassName<AModel>> | MultiLink<AClass>;
-// // export type PropType = KeyPropType | Array<PropType> | MultiLink<AClass> | StructType;
+export type PropDataType = ScalarDataType | Array<PropDataType> | StructDataType | AClass | MultiLink<AClass>;
 
-// /**
-//  * Represents a structure (object) where keys are strings and values are one of the allowed
-//  * property types.
-//  */
-// export type StructType = { [P: string]: PropType }
+/**
+ * Represents a structure (object) where keys are strings and values are one of the allowed
+ * property types.
+ */
+export type StructDataType = { [P: string]: PropDataType }
 
 /**
  * Symbol used only to make some information to be part of multi-link type. This iformation
@@ -338,7 +338,7 @@ export type ModelClass<M extends AModel, CN extends ModelClassName<M>> = ModelCl
  */
 export type ModelClassKey<M extends AModel, CN extends ModelClassName<M>> =
     ModelClass<M,CN> extends Class<any, infer K, any>
-        ? K extends KeyDataType ? {[P in keyof K]?: K[P]} : {}
+        ? K extends KeyDataType ? Partial<K> : {}
         : {}
 
 /**
@@ -347,9 +347,7 @@ export type ModelClassKey<M extends AModel, CN extends ModelClassName<M>> =
  */
 export type ModelClassUnique<M extends AModel, CN extends ModelClassName<M>> =
     ModelClass<M,CN> extends Class<any, any, infer U>
-        ? U extends KeyDataType[]
-            ? Partial<U[number]>
-            : {}
+        ? U extends KeyDataType[] ? Partial<U[number]> : {}
         : {}
 
 // export type ModelClassUnique<M extends AModel, CN extends ModelClassName<M>> =
