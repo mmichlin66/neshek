@@ -1,15 +1,16 @@
 import {
-    ModelClassName, ModelClasses, Model, Class, MultiLink, NameOfClass,
-    Struct, Entity, EntityKey, XOR, ModelClassProps, ModelClassKey, ModelClassUnique, ArrayPropDef, PropDef
+    ModelClassName, ModelClasses, Model, Class, MultiLink, NameOfClass, Struct, Entity, EntityKey,
+    XOR, ModelClassProps, ModelClassKey, ModelClassUnique, ArrayPropDef, PropDef, ModelStructs,
+    ModelStructName
 } from "../index";
 
 
 
-export type OrderClass = Class<"Order", {id: "int"}, undefined> &
+export type OrderClass = Class<"Order", {id: "i8"}, undefined> &
 {
     time: "datetime";
     items: MultiLink<ItemClass>;
-    // note: NoteStruct;
+    note: NoteStruct;
 }
 
 export type ProductClass = Class<"Product", {code: "str"}, undefined> &
@@ -17,24 +18,24 @@ export type ProductClass = Class<"Product", {code: "str"}, undefined> &
     name: "str";
     msrp: "dec";
     items: MultiLink<ItemClass>;
-    // notes?: NoteStruct[];
+    notes: NoteStruct[];
 }
 
-export type ItemClass = Class<"Item", {order: OrderClass, product: ProductClass}, [{abc: "int"}, {xyz: "str", klm: "bool"}]> &
+export type ItemClass = Class<"Item", {order: OrderClass, product: ProductClass}, [{abc: "i4"}, {xyz: "str", klm: "bool"}]> &
 {
-    qty: "int";
+    qty: "i2";
     price: "real";
-    // managerNotes?: {manager: string, note: NoteStruct}
+    managerNote: {manager: "str", note: NoteStruct}
 }
 
 export type ExtraItemInfoClass = Class<"ExtraItemInfo", {item: ItemClass}, undefined> &
 {
-    comments?: "str";
+    comments: "str";
 }
 
 export type NoteStruct = Struct<"Note"> &
 {
-    time: "int";
+    time: "i8";
     text: "str";
 }
 
@@ -54,7 +55,7 @@ export type MyModel = Model<
 function test(): void
 {
     let itemClassKey: ModelClassKey<MyModel, "Item">;
-    let itemClassUnique: ModelClassUnique<MyModel, "Item"> = {abc: "int", xyz: "str", klm: "bool"};
+    let itemClassUnique: ModelClassUnique<MyModel, "Item"> = {abc: "i4", xyz: "str", klm: "bool"};
     let itemClassProps: ModelClassProps<MyModel,"Item"> = {};
     itemClassProps.order;
     itemClassProps.product;
@@ -86,8 +87,8 @@ function test(): void
     // @ts-expect-error (should be either code or id)
     let x7pk: XOR<[ EntityKey<MyModel, "Order">,  EntityKey<MyModel, "Product">]> = {code: "123", id: 123};
 
-    // let structs: ModelStructs<MyModel>;
-    // let structNames: ModelStructName<MyModel> = "Note";
+    let structs: ModelStructs<MyModel>;
+    let structNames: ModelStructName<MyModel> = "Note";
 
     let arr: ArrayPropDef<MyModel, "str"> = {dt: "arr", elm: {dt: "str"}}
     let arr1: PropDef<MyModel, "str"[]> = {dt: "arr", elm: {dt: "str"}}

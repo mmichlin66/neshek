@@ -1,6 +1,6 @@
 import {
     Class, DataType, ModelClassKey, ModelClassPropName, ModelClassProps, MultiLink, ModelClassName,
-    ModelStructName, ModelStruct, NameOfClass, AModel, AClass, Struct, StructDataType
+    ModelStructName, ModelStruct, NameOfClass, AModel, AClass, Struct, StructDataType, IntegerDataType
 } from "./ModelTypes";
 
 
@@ -55,11 +55,34 @@ export type ClobPropDef = CommonPropDef &
  */
 export type IntPropDef = CommonPropDef &
 {
-    dt: "int";
     min?: number;
     max?: number;
     step?: number;
 }
+
+/** Contains attributes defining behavior of an "i1" property */
+export type I1PropDef = IntPropDef & { dt: "i1"}
+
+/** Contains attributes defining behavior of an "i2" property */
+export type I2PropDef = IntPropDef & { dt: "i2"}
+
+/** Contains attributes defining behavior of an "i4" property */
+export type I4PropDef = IntPropDef & { dt: "i4"}
+
+/** Contains attributes defining behavior of an "i8" property */
+export type I8PropDef = IntPropDef & { dt: "i8"}
+
+/** Contains attributes defining behavior of an "u1" property */
+export type U1PropDef = IntPropDef & { dt: "u1"}
+
+/** Contains attributes defining behavior of an "u2" property */
+export type U2PropDef = IntPropDef & { dt: "u2"}
+
+/** Contains attributes defining behavior of an "u4" property */
+export type U4PropDef = IntPropDef & { dt: "u4"}
+
+/** Contains attributes defining behavior of an "u8" property */
+export type U8PropDef = IntPropDef & { dt: "u8"}
 
 /**
  * Contains attributes defining behavior of a BigInt property
@@ -203,28 +226,37 @@ export type MultiLinkPropDef<M extends AModel, CN extends ModelClassName<M>> = A
     origin: CN;
     originKey: string & keyof ModelClassProps<M,CN>;
 }
-// export type MultiLinkPropDef<M extends AModel, C extends AClass> = AMultiLinkPropDef &
-// {
-//     origin: NameOfClass<C>;
-//     originKey: string & keyof ModelClassProps<M, NameOfClass<C>>;
-// }
 
 /**
- * Contains attributes defining behavior of a structure property
+ * Contains attributes defining behavior of a named structure property; that is, a property
+ * whose type was defined using a Struct-derived type.
  */
-export type StructPropDef<M extends AModel, T> = CommonPropDef & {dt: "obj"} & (
-    T extends Struct<infer TName> ? TName extends ModelStructName<M> ? {name: TName} : never :
-    T extends StructDataType ? {props: StructDef<M, T>} :
-    never
-)
+export type NamedStructPropDef<M extends AModel, SN extends ModelStructName<M>> = CommonPropDef &
+{
+    dt: "obj";
+    name: SN;
+}
+
+/**
+ * Contains attributes defining behavior of an unnamed structure property; that is, a property
+ * whose structure was defined using in-line JavaScript object.
+ */
+export type StructPropDef<M extends AModel, T extends StructDataType> = CommonPropDef &
+{
+    dt: "obj";
+    props: { [P in string & keyof T]-?: PropDef<M, T[P]> };
+}
 
 /**
  * Helper type with all template parameters set to `any`. This is needed for easier referencing
  * in other type definitions.
  */
-export type APropDef = StringPropDef | DatePropDef | TimePropDef | DateTimePropDef |
-    IntPropDef | BigIntPropDef | RealPropDef | DecimalPropDef | BitValuePropDef | TimestampPropDef |
-    BoolPropDef | ArrayPropDef<AModel,any> | ALinkPropDef | AMultiLinkPropDef;
+export type APropDef = StringPropDef | ClobPropDef |
+    DatePropDef | TimePropDef | DateTimePropDef | TimestampPropDef |
+    I1PropDef | I2PropDef | I4PropDef | I8PropDef | U1PropDef | U2PropDef | U4PropDef | U8PropDef |
+    RealPropDef | DecimalPropDef | BigIntPropDef | BitValuePropDef |
+    BoolPropDef | ArrayPropDef<AModel,any> | ALinkPropDef | AMultiLinkPropDef |
+    NamedStructPropDef<AModel,any> | StructPropDef<AModel,any>;
 
 /**
  * Represents attributes defining behavior of a property of a given type.
@@ -238,7 +270,14 @@ export type PropDef<M extends AModel, T> =
     T extends "datetime" ? DateTimePropDef :
     T extends "timestamp" ? TimestampPropDef :
     T extends "year" ? YearPropDef :
-    T extends "int" ? IntPropDef :
+    T extends "i1" ? I1PropDef :
+    T extends "i2" ? I2PropDef :
+    T extends "i4" ? I4PropDef :
+    T extends "i8" ? I8PropDef :
+    T extends "u1" ? U1PropDef :
+    T extends "u2" ? U2PropDef :
+    T extends "u4" ? U4PropDef :
+    T extends "u8" ? U8PropDef :
     T extends "real" ? RealPropDef :
     T extends "dec" ? DecimalPropDef :
     T extends "bit" ? BitValuePropDef :
@@ -246,9 +285,10 @@ export type PropDef<M extends AModel, T> =
     T extends "bool" ? BoolPropDef :
     T extends Array<infer E> ? ArrayPropDef<M,E> :
     T extends MultiLink<infer C> ? C extends Class<infer CN, any, any>
-        ? CN extends ModelClassName<M> ? MultiLinkPropDef<M,CN> : never : never :
-    T extends Class<infer CN, any, any> ? CN extends ModelClassName<M>
-        ? LinkPropDef<M,CN> : never :
+        ? MultiLinkPropDef<M,CN> : never :
+    T extends Class<infer CN, any, any> ? LinkPropDef<M,CN> :
+    T extends Struct<infer SN> ? NamedStructPropDef<M,SN> :
+    T extends StructDataType ? StructPropDef<M,T> :
     never
 );
 

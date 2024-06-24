@@ -1,6 +1,7 @@
 import {
-    AClass, AModel, BoolDataType, Class, DataOrLangType, DataType, LangType, LangTypeOf,
+    AClass, AModel, BoolDataType, Class, DataOrLangType, DataType, IntegerDataType, LangType, LangTypeOf,
     ModelClassName, ModelClassPropName, ModelClassProps, MultiLink, NonBoolDataType, NumericDataType,
+    RealDataType,
     ScalarDataType, StringDataType
 } from "./ModelTypes";
 
@@ -25,14 +26,14 @@ export type DataTypeMethod = [DataType, DataTypeFunc]
 export interface IFunctionsAndOperations
 {
     // string functions
-    substr: [StringDataType, (start: "int") => StringDataType]
+    substr: [StringDataType, (start: IntegerDataType) => StringDataType]
     like: [StringDataType, (pattern: "str") => "bool"]
     match: [StringDataType, (pattern: "str") => "bool"]
     concat: [StringDataType, (...args: "str"[]) => StringDataType]
 
     // numeric functions
     abs: [NumericDataType, () => NumericDataType]
-    pow: [NumericDataType, (exp: "int") => NumericDataType]
+    pow: [NumericDataType, (exp: IntegerDataType | RealDataType) => NumericDataType]
     minus: [NumericDataType, (...args: NumericDataType[]) => NumericDataType]
     plus: [NumericDataType, (...args: NumericDataType[]) => NumericDataType]
     times: [NumericDataType, (...args: NumericDataType[]) => NumericDataType]
@@ -59,20 +60,20 @@ export interface IFunctionsAndOperations
     not: [BoolDataType | NumericDataType, () => BoolDataType]
 
     // function converting one type to another other type
-    toCHAR: [DataType, (maxLen?: "int", charset?: "str") => "str"]
+    toCHAR: [DataType, (maxLen?: IntegerDataType, charset?: "str") => "str"]
     toDATE: [DataType, () => "date"]
-    toDATETIME: [DataType, (precision?: "int") => "datetime"]
-    toDECIMAL: [DataType, (precision?: "int", scale?: "int") => "dec"]
+    toDATETIME: [DataType, (precision?: IntegerDataType) => "datetime"]
+    toDECIMAL: [DataType, (precision?: IntegerDataType, scale?: IntegerDataType) => "dec"]
     toDOUBLE: [DataType, () => "real"]
-    toFLOAT: [DataType, (precision?: "int") => "real"]
-    toNCHAR: [DataType, (maxLen?: "int") => "str"]
+    toFLOAT: [DataType, (precision?: IntegerDataType) => "real"]
+    toNCHAR: [DataType, (maxLen?: IntegerDataType) => "str"]
     toREAL: [DataType, () => "real"]
     toSIGNED: [DataType, () => "bigint"]
-    toTIME: [DataType, (precision?: "int") => "time"]
+    toTIME: [DataType, (precision?: IntegerDataType) => "time"]
     toUNSIGNED: [DataType, () => "bigint"]
-    toYEAR: [DataType, (precision?: "int") => "year"]
+    toYEAR: [DataType, (precision?: IntegerDataType) => "year"]
 
-    case: [DataType, (...args: [when: DataType | undefined, result: DataType][]) => DataType]
+    case: [DataType, (...args: [when: ScalarDataType | undefined, result: ScalarDataType][]) => ScalarDataType]
 }
 
 /**
@@ -110,10 +111,10 @@ export type Expression<DT extends DataType> =
  * **Example:**
  * ```typescript
  * // original tuple
- * ["str", boolean, "int"?]
+ * ["str", boolean, "i4"?]
  *
  * // resulting tuple
- * [string | Expr<"str">, boolean, (number | Expr<"int">)?]
+ * [string | Expr<"str">, boolean, (number | Expr<"i4">)?]
  * ```
  *
  * @typeParam T A tuple where each element is either a DataType or a LangType or an array of
@@ -135,10 +136,10 @@ export type MappedParamsTuple<T extends (DataOrLangType | DataOrLangType[])[]> =
  * **Example:**
  * ```typescript
  * // function signature
- * (arg1: "str", arg2: boolean, arg3: "int"?) => "str"
+ * (arg1: "str", arg2: boolean, arg3: "i4"?) => "str"
  *
  * // resulting tuple
- * [string | Expr<"str">, boolean, (number | Expr<"int">)?]
+ * [string | Expr<"str">, boolean, (number | Expr<"i4">)?]
  * ```
  *
  * @typeParam T A function where each parameter is either a DataType or a LangType or an array of
@@ -156,10 +157,10 @@ export type DataTypeFuncParams<F extends DataTypeFunc> = MappedParamsTuple<Param
  * **Example:**
  * ```typescript
  * // DataType function signature
- * (arg1: "str", arg2: boolean, arg3: "int"?) => "str"
+ * (arg1: "str", arg2: boolean, arg3: "i4"?) => "str"
  *
  * // resulting function signature
- * (arg1: string | Expr<"str">, arg2: boolean, arg3: (number | Expr<"int">)?) => Expr<"str">
+ * (arg1: string | Expr<"str">, arg2: boolean, arg3: (number | Expr<"i4">)?) => Expr<"str">
  * ```
  *
  * @typeParam T A function where each parameter is either a DataType or a LangType or an array of

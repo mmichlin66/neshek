@@ -609,7 +609,7 @@ export function testExpressionAPI(): void
 {
     type Table = {
         str: "str",
-        int: "int",
+        int: "i4",
         bool: "bool";
     }
 

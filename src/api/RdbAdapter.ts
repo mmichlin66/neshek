@@ -1,4 +1,4 @@
-import { ScalarLangType } from "./ModelTypes";
+import { IntegerDataType, ScalarLangType } from "./ModelTypes";
 import {
     AClassDef, APropDef, ASchemaDef, ALinkPropDef, StringPropDef, BoolPropDef, IntPropDef
 } from "./SchemaTypes";
@@ -173,7 +173,15 @@ export abstract class RdbAdapter implements IDBAdapter
         {
             case "str": return this.getStringFieldType(propDef);
             case "bool": return this.getBoolFieldType(propDef);
-            case "int": return this.getIntFieldType(propDef);
+            case "i1":
+            case "i2":
+            case "i4":
+            case "i8":
+            case "u1":
+            case "u2":
+            case "u4":
+            case "u8":
+                return this.getIntFieldType(propDef);
             case "bigint": return "bigint";
             case "real": return "float";
         }
@@ -214,7 +222,7 @@ export abstract class RdbAdapter implements IDBAdapter
      * @param propDef Object describing the integer property
      * @returns SQL type name
      */
-    protected getIntFieldType(propDef: IntPropDef): string
+    protected getIntFieldType<T extends IntegerDataType>(propDef: IntPropDef): string
     {
        return "int";
     }

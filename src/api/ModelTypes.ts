@@ -36,13 +36,9 @@ export type StringDataType = "str" | "clob";
 export type TemporalDataType = "date" | "time" | "datetime" | "timestamp";
 
 /**
- * Represents underlying data types corresponding to integer property types:
- *   - "int" - signed or unsigned integer of different sizes
- *   - "bigint" - signed or unsigned integer of different sizes
- *   - "bit" - bit-values
- *   - "year" - 4-digit year
+ * Represents underlying data types corresponding to signed and unsigned integer property types.
  */
-export type IntegerDataType = "int" | "bigint" | "bit" | "year";
+export type IntegerDataType = "i1" | "i2" | "i4" | "i8" | "u1" | "u2" | "u4" | "u8";
 
 /**
  * Represents underlying data types corresponding to real (floating or fixed point) property types:
@@ -61,7 +57,7 @@ export type BigintDataType = "bigint" | "bit";
 /**
  * Combines integer and real data types in one definition for convenience
  */
-export type NumericDataType = IntegerDataType | RealDataType
+export type NumericDataType = IntegerDataType | RealDataType | BigintDataType | "year";
 
 /**
  * Represents underlying data types corresponding to Boolean property types:
@@ -80,16 +76,32 @@ export type NonBoolDataType = StringDataType | NumericDataType | TemporalDataTyp
 export type ScalarDataType = StringDataType | NumericDataType | TemporalDataType | BoolDataType;
 
 /**
- * Represents underlying data types corresponding to property types:
+ * Represents underlying data types corresponding to property types. These are literal string
+ * types that are used to define properties in schema classes and structures. Each type corresponds
+ * to one or more language types, which means that these language types can be used when working
+ * with class entities. For example, if a class `Person` has a property `firstName` of DataType
+ * `"str"`, then in run-time, the instances of the `Person` class will have `firstName` property
+ * values of the `string` language type.
+ *
+ * Since **DataType** defines properties of schema classes, and since the values of these
+ * properties are likely to be stored as database fields, the types used for these properties
+ * closely follow the SQL types.
+ *
+ * In addition to regular scalar types, **DataType** includes types for links and derivative types
+ * for objects and arrays.
+ *
+ * The following data types arew defined:
  * - string properties:
  *   - "str" - string
  *   - "clob" - character-based large object
+ * - temporal (time- and date-rlated) properties
  *   - "date" - date only
  *   - "time" - time only
  *   - "datetime" - datetime
  *   - "timestamp" - timestamp
  * - numeric properties
- *   - "int" - signed or unsigned integer of different sizes
+ *   - "i1", "i2", "i4", "i8" - signed integers of different sizes
+ *   - "u1", "u2", "u4", "u8" - unsigned integers of different sizes
  *   - "real" - floating-point numbers of single or double precision
  *   - "dec" - fixed-point numbers (DECIMAL/NUMERIC)
  *   - "year" - 4-digit year
@@ -118,10 +130,10 @@ export type DataOrLangType = DataType | LangType;
  */
 export type DataTypeOf<T extends LangType> =
     // T extends SqlTime ? "time" :
-    T extends string ? "str" | "clob" | "date" | "time" | "datetime" | "timestamp" :
-    T extends number ? "int" | "real" | "dec" | "year" :
-    T extends bigint ? "bigint" | "bit" :
-    T extends boolean ? "bool" :
+    T extends string ? StringDataType | TemporalDataType :
+    T extends number ? IntegerDataType | RealDataType | "year" :
+    T extends bigint ? BigintDataType :
+    T extends boolean ? BoolDataType :
     T extends Array<LangType> ? "multilink" | "arr" :
     T extends Record<string,LangType> ? "link" | "obj" :
     undefined

@@ -4,8 +4,8 @@ import { Expression, MappedParamsTuple } from "../index";
 
 function test()
 {
-    type T1 = MappedParamsTuple<["str", boolean, "int"?]>;
-    type T2 = MappedParamsTuple<["str", boolean | null, "int"?]>;
+    type T1 = MappedParamsTuple<["str", boolean, "i4"?]>;
+    type T2 = MappedParamsTuple<["str", boolean | null, "i4"?]>;
     type T3 = MappedParamsTuple<[]>;
     type T4 = MappedParamsTuple<["str"?]>;
 
@@ -15,13 +15,13 @@ function test()
     e1.$substr(1).$concat("a", "b", "c").$match("abc").$coalesce().$isNull()
     e1.$toCHAR(20).$concat("")
 
-    let e2 = {} as Expression<"int">;
+    let e2 = {} as Expression<"i4">;
     let res = e2.$minus(1, 2, 3).$abs();
     e1.$toDECIMAL(10, 2).$abs()
 
 
 
-    // type Term2 = FuncExpr<"foo", (s: "str", start: "int", x: "bool") => "str">;
+    // type Term2 = FuncExpr<"foo", (s: "str", start: "i4", x: "bool") => "str">;
     // type FirstParam2 = Term2["args"][0];
     // let fp2: FirstParam2;
     // type SecondParam2 = Term2["args"][1];
@@ -30,7 +30,7 @@ function test()
     // let tp2: ThirdParam2;
     // let term2 = {} as Term2;
 
-    // type Term3 = FuncExpr<"and", (...args: "bool"[]) => "int">;
+    // type Term3 = FuncExpr<"and", (...args: "bool"[]) => "i4">;
     // type FirstParam3 = Term3["args"][0];
     // let fp3: FirstParam3;
     // type SecondParam3 = Term3["args"][1];

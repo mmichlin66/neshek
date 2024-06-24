@@ -6,10 +6,10 @@ export let mySchema: SchemaDef<MyModel> = {
     classes: {
         Order : {
             props: {
-                id: {dt: "int", required: true},
+                id: {dt: "i8", required: true},
                 time: {dt: "datetime", precision: 3},
                 items: {dt: "multilink", origin: "Item", originKey: "order"},
-                // note: {dt: "obj", name: "Note"}
+                note: {dt: "obj", name: "Note"}
             },
             key: ["id"],
         },
@@ -19,7 +19,7 @@ export let mySchema: SchemaDef<MyModel> = {
                 name: {dt: "str", minlen: 1, maxlen: 100},
                 msrp: {dt: "dec", min: 0, precision: [10,2], },
                 items: {dt: "multilink", origin: "Item", originKey: "product"},
-                // notes: {dt: "arr", elm: {dt: "obj", name: "Note"}}
+                notes: {dt: "arr", elm: {dt: "obj", name: "Note"}}
             },
             key: ["code"],
         },
@@ -27,12 +27,12 @@ export let mySchema: SchemaDef<MyModel> = {
             props: {
                 order: {dt: "link", target: "Order"},
                 product: {dt: "link", target: "Product"},
-                qty: {dt: "int", min: 0},
+                qty: {dt: "i2", min: 0},
                 price: {dt: "real", min: 0},
-                abc: {dt: "int"},
+                abc: {dt: "i4"},
                 xyz: {dt: "str"},
                 klm: {dt: "bool"},
-                // managerNotes: {dt: "obj", props: {manager: {dt: "str"}, note: {dt: "obj", name: "Note"}}}
+                managerNote: {dt: "obj", props: {manager: {dt: "str"}, note: {dt: "obj", name: "Note"}}}
             },
             key: ["order", "product"],
         },
@@ -58,7 +58,7 @@ export let mySchema: SchemaDef<MyModel> = {
 
     structs: {
         Note: {
-            time: {dt: "int"},
+            time: {dt: "i8"},
             text: {dt: "str", maxlen: 200}
         }
     }
