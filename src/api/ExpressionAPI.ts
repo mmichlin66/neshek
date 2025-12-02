@@ -414,10 +414,10 @@ function renderMethodExpr(expr: MethodExpr): [string, PrecedenceRank]
 function renderFunc(methodName: string, args: MethodArgs, info?: string | FuncInfo): [string, PrecedenceRank]
 {
     let name = (info && (typeof info === "string" ? info : info.name)) ?? methodName.toUpperCase();
-    let renderFunc = info && typeof info !== "string" ? info.render : undefined;
+    let renderingFunc = info && typeof info !== "string" ? info.render : undefined;
     let s: string;
-    if (renderFunc)
-        s = renderFunc(name, args);
+    if (renderingFunc)
+        s = renderingFunc(name, args);
     else
     {
         // render all arguments as comma-separated parameters of the function.

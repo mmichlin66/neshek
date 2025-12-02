@@ -89,6 +89,19 @@ export type APropSet = string | string[] | Record<string, any>;
 
 
 /**
+ * Represents a filtering function that can be applied to a query. The function that accepts an
+ * entity of the filtered class and returns a filtering expression. Note that when the filter
+ * function is called, the input parameter is not a real object from the repository. Instead, it
+ * is an ethemeral object only used to produce property names in a type safe manner, which also
+ * allows calling comparizon operators and functions for these properties.
+ *
+ * @typeParam M Model describing all available classes of objects
+ * @typeParam T Type whose retrieval options are specified. This must be an entity.
+ */
+export type QueryFilterFunc<M extends AModel, CN extends ModelClassName<M>> =
+    (obj: EnhancedEntity<M,CN>) => Expression<BoolDataType>;
+
+/**
  * Represents a query for a collection of objects of the given type, which lists filters and
  * other parameters as well as properties that should be retrieved. The object might be either
  * a source of a multi link or an element in an array.
@@ -99,18 +112,37 @@ export type APropSet = string | string[] | Record<string, any>;
 export type Query<M extends AModel, CN extends ModelClassName<M>> =
 {
     /**
-     * Represent a filter to be applied to the objects of the given type. It can be specified as
-     * either the FilterBase-derived object or as a function that returns a FilterBase-derived
-     * object. The function accepts an object of type `T`, which can be used to specify property
-     * names that should be filtered. Note that this is not a real object from the repository - it
-     * is an ethemeral object only used to produce property names in a type safe manner.
+     * Represent one or more filtering functions to be applied to the objects of the given type.
+     * If more than one function are specified, their returned expressions are combined with
+     * the "AND" operation.
      */
-    filter?: (obj: EnhancedEntity<M,CN>) => Expression<BoolDataType>;
+    filter?: QueryFilterFunc<M,CN> | QueryFilterFunc<M,CN>[];
     sort?: string;
+
+    /**
+     * PropSet object indicating what properties to retrieve. This object allows to specify values
+     * for the properties, which is a convenient way to apply simple filtering.
+     */
     props?: PropSet<M, Entity<M,CN>, true>;
+
+    /**
+     * Maximum number of objects to retrieve. If undefined, no theoretical limit is applied,
+     * although repository implementations can impose their own internal limits.
+     */
     limit?: number;
+
+    /**
+     * Opaque string representing the position from which to start the querying process.
+     */
     cursor?: string;
 }
+
+
+
+/**
+ * Represents a filtering function in non-templated form.
+ */
+export type AQueryFilterFunc = (obj: object) => Expression<BoolDataType>;
 
 /**
  * Represents a general non-templated structure of a query for a collection of objects.
@@ -118,7 +150,7 @@ export type Query<M extends AModel, CN extends ModelClassName<M>> =
  */
 export type AQuery =
 {
-    filter?: (obj: object) => Expression<BoolDataType>;
+    filter?: AQueryFilterFunc | AQueryFilterFunc[];
     sort?: string;
     props?: APropSet;
     limit?: number;

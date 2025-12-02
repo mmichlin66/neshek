@@ -1,3 +1,4 @@
+import { AQuery } from "./QueryTypes";
 import { RepoQueryResponse } from "./RepoTypes";
 
 
@@ -30,12 +31,12 @@ export interface IDBAdapter
      */
     get(className: string, key: AObject, propNames: string[]): Promise<AObject | null>;
 
-    // /**
-    //  * Retrieves multiple objects by the given criteria.
-    //  * @param className Name of class in the model.
-    //  * @param query Criteria for retrieving objects.
-    //  */
-    // query(className: string, query?: AQuery): Promise<RepoQueryResponse<AObject>>;
+    /**
+     * Retrieves multiple objects by the given criteria.
+     * @param className Name of class in the model.
+     * @param query Criteria for retrieving objects.
+     */
+    query(className: string, query?: AQuery): Promise<RepoQueryResponse<AObject>>;
 
     /**
      * Creates new object of the given class with the given properties. The properties must

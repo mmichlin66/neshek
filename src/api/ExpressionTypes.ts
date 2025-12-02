@@ -1,8 +1,7 @@
 import {
     AClass, AModel, BoolDataType, Class, DataOrLangType, DataType, IntegerDataType, LangType, LangTypeOf,
     ModelClassName, ModelClassPropName, ModelClassProps, MultiLink, NonBoolDataType, NumericDataType,
-    RealDataType,
-    ScalarDataType, StringDataType
+    RealDataType, ScalarDataType, StringDataType
 } from "./ModelTypes";
 
 
@@ -45,35 +44,35 @@ export interface IFunctionsAndOperations
     // General comparison functions
     eq: [DataType, (arg: DataType) => BoolDataType]
     ne: [DataType, (arg: DataType) => BoolDataType]
-    lt: [DataType, (arg: DataType) => BoolDataType]
-    lte: [DataType, (arg: DataType) => BoolDataType]
-    gt: [DataType, (arg: DataType) => BoolDataType]
-    gte: [DataType, (arg: DataType) => BoolDataType]
+    lt: [ScalarDataType, (arg: ScalarDataType) => BoolDataType]
+    lte: [ScalarDataType, (arg: ScalarDataType) => BoolDataType]
+    gt: [ScalarDataType, (arg: ScalarDataType) => BoolDataType]
+    gte: [ScalarDataType, (arg: ScalarDataType) => BoolDataType]
 
     // functions that work on multiple types
     between: [NonBoolDataType, (min: NonBoolDataType, max: NonBoolDataType) => BoolDataType]
-    coalesce: [DataType, (...args: DataType[]) => DataType]
-    in: [DataType, (...args: DataType[]) => BoolDataType]
-    notIn: [DataType, (...args: DataType[]) => BoolDataType]
+    coalesce: [ScalarDataType, (...args: ScalarDataType[]) => ScalarDataType]
+    in: [ScalarDataType, (...args: ScalarDataType[]) => BoolDataType]
+    notIn: [ScalarDataType, (...args: ScalarDataType[]) => BoolDataType]
     isNull: [DataType, () => BoolDataType]
     isNotNull: [DataType, () => BoolDataType]
     not: [BoolDataType | NumericDataType, () => BoolDataType]
 
     // function converting one type to another other type
-    toCHAR: [DataType, (maxLen?: IntegerDataType, charset?: "str") => "str"]
-    toDATE: [DataType, () => "date"]
-    toDATETIME: [DataType, (precision?: IntegerDataType) => "datetime"]
-    toDECIMAL: [DataType, (precision?: IntegerDataType, scale?: IntegerDataType) => "dec"]
-    toDOUBLE: [DataType, () => "real"]
-    toFLOAT: [DataType, (precision?: IntegerDataType) => "real"]
-    toNCHAR: [DataType, (maxLen?: IntegerDataType) => "str"]
-    toREAL: [DataType, () => "real"]
-    toSIGNED: [DataType, () => "bigint"]
-    toTIME: [DataType, (precision?: IntegerDataType) => "time"]
-    toUNSIGNED: [DataType, () => "bigint"]
-    toYEAR: [DataType, (precision?: IntegerDataType) => "year"]
+    toCHAR: [ScalarDataType, (maxLen?: IntegerDataType, charset?: "str") => "str"]
+    toDATE: [ScalarDataType, () => "date"]
+    toDATETIME: [ScalarDataType, (precision?: IntegerDataType) => "datetime"]
+    toDECIMAL: [ScalarDataType, (precision?: IntegerDataType, scale?: IntegerDataType) => "dec"]
+    toDOUBLE: [ScalarDataType, () => "real"]
+    toFLOAT: [ScalarDataType, (precision?: IntegerDataType) => "real"]
+    toNCHAR: [ScalarDataType, (maxLen?: IntegerDataType) => "str"]
+    toREAL: [ScalarDataType, () => "real"]
+    toSIGNED: [ScalarDataType, () => "bigint"]
+    toTIME: [ScalarDataType, (precision?: IntegerDataType) => "time"]
+    toUNSIGNED: [ScalarDataType, () => "bigint"]
+    toYEAR: [ScalarDataType, (precision?: IntegerDataType) => "year"]
 
-    case: [DataType, (...args: [when: ScalarDataType | undefined, result: ScalarDataType][]) => ScalarDataType]
+    case: [ScalarDataType, (...args: [when: ScalarDataType | undefined, result: ScalarDataType][]) => ScalarDataType]
 }
 
 /**

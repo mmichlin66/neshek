@@ -243,26 +243,5 @@ function getPropNamesFromPropSet(className: string, classDef: AClassDef, propSet
     }
 }
 
-// /**
-//  * Extracts an array of property names from the given string, which is a comma-and-space-separated
-//  * list of property names.
-//  */
-// function getPropNamesFromString(className: string, classDef: AClassDef, s: string): string[]
-// {
-//     // split the string into property names and check that the names are valid
-//     let propNames = s.split(/[\s,;]+/);
-//     let result: string[] = [];
-//     for (let propName of propNames)
-//     {
-//         let propDef = classDef.props[propName];
-//         if (!propDef)
-//             RepoError.PropNotFound(className, propName);
-//         else if (propDef.dt !== "multilink")
-//             result.push(propName);
-//     }
-
-//     return result;
-// }
-
 
 
