@@ -8,7 +8,6 @@
     "disableSources": true,
     "hideGenerator": true,
     "includeVersion": true,
-	"includes": "./src/typedoc",
 	"out": "./web/reference",
     "entryPointStrategy": "expand",
 	"entryPoints": [

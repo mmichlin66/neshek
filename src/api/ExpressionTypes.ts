@@ -100,7 +100,7 @@ export type LangMethodsOf<DT extends DataType> =
 export type Expression<DT extends DataType> =
     DT extends "any"
         ? { [N: string]: (...args: any[]) => any }
-        : { [N in string & keyof LangMethodsOf<DT> as `$${N}`]-?: LangMethodsOf<DT>[N] }
+        : { [N in Extract<keyof LangMethodsOf<DT>, string> as `$${N}`]-?: LangMethodsOf<DT>[N] }
 
 /**
  * Helper type that converts the given tuple of DataType or LangType types to a tuple

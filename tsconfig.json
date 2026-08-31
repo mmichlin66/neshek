@@ -6,6 +6,7 @@
 		"sourceMap": true,
 		"declarationMap": true,
 		"strictNullChecks": true,
+        "strictFunctionTypes": false,
 		"noImplicitAny": false,
 		"noImplicitReturns": true,
 		"noUnusedLocals": false,
@@ -15,15 +16,14 @@
         "noEmitOnError": true,
         "useDefineForClassFields": false,
         "module": "esnext",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "esModuleInterop": true,
 		"target": "esnext",
-		"lib": [ "esnext" ],
+		"lib": [ "esnext", "dom" ],
 		"rootDir": "src",
 		"outDir": "./lib",
-        "baseUrl": ".",
         "paths": {
-            "neshek": ["src/index.ts"]
+            "neshek": ["./src/index.ts"]
         }
 	},
 
